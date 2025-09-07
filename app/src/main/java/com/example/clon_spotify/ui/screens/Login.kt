@@ -1,5 +1,6 @@
 package com.example.clon_spotify.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,14 +9,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
+import com.example.clon_spotify.R
+
 
 @Composable
 fun LoginScreen(
-    onLoginClick: () -> Unit = {},     //   para navegar a Home
-    onRegisterClick: () -> Unit = {}   //  para navegar a Registro
+    onLoginClick: () -> Unit = {},
+    onRegisterClick: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -31,54 +35,47 @@ fun LoginScreen(
         ) {
             var email by remember { mutableStateOf("") }
 
+            // Logo Spotify
+            Image(
+                painter = painterResource(id = R.drawable.spotify_logo),
+                contentDescription = "Logo Spotify",
+                modifier = Modifier
+                    .size(80.dp)
+                    .padding(bottom = 16.dp)
+            )
+
             // Título
             Text(
                 text = "Inicia sesión en Spotify",
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 24.dp, bottom = 24.dp),
+                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
                 lineHeight = 28.sp
             )
 
-            // Botón: Continuar con Google
-            Button(
-                onClick = { onLoginClick() },  // ✅ Este ya funcionaba
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(50)
-            ) {
-                Text("Continuar con Google", color = Color.White, fontWeight = FontWeight.Bold)
-            }
-
-            //Botón: Iniciar con Facebook
-            Button(
-                onClick = { /* TODO */ },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(50)
-            ) {
-                Text("Iniciar sesión con Facebook", color = Color.White, fontWeight = FontWeight.Bold)
-            }
-
-            // Botón: Iniciar con Apple
-            Button(
-                onClick = { /* TODO */ },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(50)
-            ) {
-                Text("Iniciar sesión con Apple", color = Color.White, fontWeight = FontWeight.Bold)
-            }
-
-            //  Botón: Iniciar con número de teléfono
-            Button(
-                onClick = { /* TODO */ },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(50)
-            ) {
-                Text("Iniciar sesión con número de teléfono", color = Color.White, fontWeight = FontWeight.Bold)
+            // Botones sociales (Google, Facebook, Apple, Teléfono)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SocialLoginButton (
+                    iconRes = R.drawable.google_logo,
+                    text = "Continuar con Google",
+                    onClick = onLoginClick
+                )
+                SocialLoginButton(
+                    iconRes = R.drawable.facebook_logo,
+                    text = "Iniciar sesión con Facebook",
+                    onClick = { /* TODO */ }
+                )
+                SocialLoginButton(
+                    iconRes = R.drawable.apple_logo,
+                    text = "Iniciar sesión con Apple",
+                    onClick = { /* TODO */ }
+                )
+                SocialLoginButton (
+                    iconRes = null,
+                    text = "Iniciar sesión con número de teléfono",
+                    onClick = { /* TODO */ }
+                )
             }
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -113,9 +110,10 @@ fun LoginScreen(
                 )
             )
 
-            //  Botón: Continuar (el que no funcionaba antes)
+
+            // Botón Continuar
             Button(
-                onClick = { onLoginClick() },  // ✅ Corregido aquí
+                onClick = { onLoginClick() },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(50)
@@ -123,7 +121,7 @@ fun LoginScreen(
                 Text("Continuar", color = Color.Black, fontWeight = FontWeight.Bold)
             }
 
-            // Link para ir a registro
+            //Texto: No tienes cuenta
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,

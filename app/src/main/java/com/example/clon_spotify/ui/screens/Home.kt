@@ -51,7 +51,7 @@ fun BottomNavigationBar() {
         color = Color.DarkGray
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text("Barra Inferior", color = Color.White)
+            Text("biblioteca", color = Color.White)
         }
     }
 }
