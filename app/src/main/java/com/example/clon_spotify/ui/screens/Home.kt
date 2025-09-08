@@ -126,47 +126,71 @@ fun TopFilters() {
 // Accesos rápidos
 @Composable
 fun QuickAccessPlaylists() {
-    LazyRow(
-        modifier = Modifier.padding(start = 16.dp, bottom = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    val playlists = listOf(
+        Pair(R.drawable.adele, "ADELE - ÉXITOS"),
+        Pair(R.drawable.luism, "Luis Miguel - Lo Mejor"),
+        Pair(R.drawable.morat, "Morat Todas Las Canciones"),
+        Pair(R.drawable.rock_clasico, "Rock Clásico"),
+        Pair(R.drawable.jesse, "Jesse & Joy"),
+        Pair(R.drawable.music_2000, "Lo mejor de los 2000"),
+        Pair(R.drawable.pedrosv, "Pedro Suárez Vértiz")
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Lista de playlists con imagen y nombre
-        items(
-            listOf(
-                Pair(R.drawable.adele, "ADELE - EXITOS"),
-                Pair(R.drawable.morat, "Morat Canciones"),
-                Pair(R.drawable.jesse, "Jesse & Joy"),
-                Pair(R.drawable.rock_clasico, "Clásicos del Rock"),
-                Pair(R.drawable.music_2000, "Lo Mejor de los 2000")
-            )
-        ) { (imageRes, playlistName) ->
-            Surface(
-                color = Color.DarkGray,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier
-                    .size(width = 200.dp, height = 70.dp) // un poco más ancho para imagen + texto
+        playlists.chunked(2).forEach { rowItems ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Image(
-                        painter = painterResource(id = imageRes),
-                        contentDescription = playlistName,
+                rowItems.forEach { (imageRes, playlistName) ->
+                    Surface(
+                        color = Color.DarkGray,
+                        shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
-                            .size(80.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = playlistName,
-                        color = Color.White,
-                        fontSize = 18.sp
+                            .weight(1f) // tarjetas iguales
+                            .height(70.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                painter = painterResource(id = imageRes),
+                                contentDescription = playlistName,
+                                modifier = Modifier
+                                    .size(60.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = playlistName,
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                maxLines = 2
+                            )
+                        }
+                    }
+                }
+
+                // un solo item
+                if (rowItems.size == 1) {
+                    Spacer(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(70.dp)
                     )
                 }
             }
         }
     }
 }
+
+
 
 // Creado para ti
 @Composable
