@@ -18,6 +18,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import com.google.accompanist.flowlayout.FlowRow
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import com.example.clon_spotify.R
+
 
 
 //  Pantalla principal
@@ -124,14 +130,38 @@ fun QuickAccessPlaylists() {
         modifier = Modifier.padding(start = 16.dp, bottom = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(5) { index ->
+        // Lista de playlists con imagen y nombre
+        items(
+            listOf(
+                Pair(R.drawable.adele, "ADELE - EXITOS"),
+                Pair(R.drawable.morat, "Morat Canciones"),
+                Pair(R.drawable.jesse, "Jesse & Joy"),
+                Pair(R.drawable.rock_clasico, "Clásicos del Rock"),
+                Pair(R.drawable.music_2000, "Lo Mejor de los 2000")
+            )
+        ) { (imageRes, playlistName) ->
             Surface(
                 color = Color.DarkGray,
                 shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.size(140.dp, 60.dp)
+                modifier = Modifier
+                    .size(width = 200.dp, height = 70.dp) // un poco más ancho para imagen + texto
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text("Playlist $index", color = Color.White)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = playlistName,
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = playlistName,
+                        color = Color.White,
+                        fontSize = 18.sp
+                    )
                 }
             }
         }
@@ -142,19 +172,25 @@ fun QuickAccessPlaylists() {
 @Composable
 fun CreatedForYou() {
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Creado para ti", color = Color.White, fontSize = 20.sp)
+        Text(
+            text = "Creado para ti",
+            color = Color.White,
+            fontSize = 20.sp
+        )
         Spacer(modifier = Modifier.height(8.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(2) { index ->
+            items(listOf(R.drawable.luis_mix, R.drawable.bruno_mix)) { imageRes ->
                 Column {
-                    Box(
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = null,
                         modifier = Modifier
                             .size(140.dp)
-                            .background(Color.Gray)
+                            .background(Color.Gray) // opcional, para placeholder
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Mix diario ${index + 4}", color = Color.White)
-                    Text("Artistas varios", color = Color.LightGray, fontSize = 12.sp)
+                    Text("Mix diario", color = Color.White)
+                    Text("Artistas variados", color = Color.LightGray, fontSize = 12.sp)
                 }
             }
         }
@@ -165,40 +201,80 @@ fun CreatedForYou() {
 @Composable
 fun RecentsSection() {
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Recientes", color = Color.White, fontSize = 20.sp)
+        Text(
+            text = "Recientes",
+            color = Color.White,
+            fontSize = 20.sp
+        )
         Spacer(modifier = Modifier.height(8.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(4) {
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .background(Color.DarkGray),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Playlist", color = Color.White)
+            // Lista de imágenes recientes
+            items(
+                listOf(
+                    R.drawable.adele,
+                    R.drawable.morat,
+                    R.drawable.luism,
+                    R.drawable.pedrosv
+                )
+            ) { imageRes ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(100.dp)
+                            .background(Color.DarkGray)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Playlist", color = Color.White, fontSize = 14.sp)
                 }
             }
         }
     }
 }
 
+
 // Más de lo que te gusta
 @Composable
 fun MoreOfWhatYouLike() {
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Más de lo que te gusta", color = Color.White, fontSize = 20.sp)
+        Text(
+            text = "Más de lo que te gusta",
+            color = Color.White,
+            fontSize = 20.sp
+        )
         Spacer(modifier = Modifier.height(8.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(3) {
-                Box(
-                    modifier = Modifier
-                        .size(140.dp)
-                        .background(Color.DarkGray),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Sugerencia", color = Color.White)
+            // Lista de imágenes sugeridas (coloca las tuyas en drawable)
+            items(
+                listOf(
+                    R.drawable.morat,
+                    R.drawable.adele_mas,
+                    R.drawable.bruno_mix
+                )
+            ) { imageRes ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Image(
+                        painter = painterResource(id = imageRes),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(140.dp)
+                            .background(Color.DarkGray) // opcional como placeholder
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Sugerencia",
+                        color = Color.White,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = "Artistas varios",
+                        color = Color.LightGray,
+                        fontSize = 12.sp
+                    )
                 }
             }
         }
     }
 }
+
