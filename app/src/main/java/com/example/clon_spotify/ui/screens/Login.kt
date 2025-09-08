@@ -78,17 +78,7 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Texto encima del input
-            Text(
-                text = "Correo electrónico o nombre de usuario",
-                color = Color.White,
-                fontSize = 14.sp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 1.dp)
-            )
+            Spacer(modifier = Modifier.height(30.dp))
 
             // Campo de texto (email/usuario)
             OutlinedTextField(

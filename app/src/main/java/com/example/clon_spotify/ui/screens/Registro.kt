@@ -58,14 +58,6 @@ fun RegistroScreen(
                     .fillMaxWidth()
             )
 
-            Text(
-                text = "Dirección de correo electrónico",
-                color = Color.White,
-                fontSize = 14.sp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 2.dp)
-            )
 
             // Campo Email
             OutlinedTextField(
