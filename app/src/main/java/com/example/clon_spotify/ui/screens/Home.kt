@@ -250,7 +250,7 @@ fun MoreOfWhatYouLike() {
                 listOf(
                     R.drawable.morat,
                     R.drawable.adele_mas,
-                    R.drawable.bruno_mix
+                    R.drawable.luism
                 )
             ) { imageRes ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
