@@ -20,6 +20,13 @@ import androidx.navigation.NavHostController
 import com.google.accompanist.flowlayout.FlowRow
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import com.example.clon_spotify.R
@@ -50,17 +57,34 @@ fun HomeScreen(navController: NavHostController) {
 }
 @Composable
 fun BottomNavigationBar() {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(60.dp),
-        color = Color.DarkGray
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text("biblioteca", color = Color.White)
-        }
+    NavigationBar {
+        NavigationBarItem(
+            selected = true,
+            onClick = { /* nav inicio */ },
+            icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
+            label = { Text("Inicio") }
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = { /* nav búsqueda */ },
+            icon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
+            label = { Text("Buscar") }
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = { /* nav biblioteca */ },
+            icon = { Icon(Icons.Default.List, contentDescription = "Tu biblioteca") },
+            label = { Text("Tu biblioteca") }
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = { /* nav crear */ },
+            icon = { Icon(Icons.Default.Add, contentDescription = "Crear") },
+            label = { Text("Crear") }
+        )
     }
 }
+
 
 //  Filtros superiores
 @Composable
