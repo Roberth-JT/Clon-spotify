@@ -52,6 +52,7 @@ fun HomeScreen(navController: NavHostController) {
         }
     }
 }
+//barra inferior flotante
 @Composable
 fun BottomNavigationBar() {
     NavigationBar {
@@ -185,7 +186,7 @@ fun QuickAccessPlaylists() {
                                 painter = painterResource(id = imageRes),
                                 contentDescription = playlistName,
                                 modifier = Modifier
-                                    .size(60.dp)
+                                    .size(70.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
@@ -198,7 +199,7 @@ fun QuickAccessPlaylists() {
                     }
                 }
 
-                // un solo item
+                // una sola tarjeta
                 if (rowItems.size == 1) {
                     Spacer(
                         modifier = Modifier
