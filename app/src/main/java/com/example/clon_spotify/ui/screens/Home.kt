@@ -21,13 +21,10 @@ import com.google.accompanist.flowlayout.FlowRow
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import com.example.clon_spotify.R
 
@@ -179,7 +176,7 @@ fun QuickAccessPlaylists() {
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
                             .weight(1f) // tarjetas iguales
-                            .height(70.dp)
+                            .height(60.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically

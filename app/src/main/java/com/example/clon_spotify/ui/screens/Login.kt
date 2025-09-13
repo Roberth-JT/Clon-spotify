@@ -27,6 +27,7 @@ fun LoginScreen(
             .background(Color.Black)
             .padding(16.dp),
         contentAlignment = Alignment.Center
+
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
