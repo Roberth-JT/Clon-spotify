@@ -1,5 +1,6 @@
 package com.example.clon_spotify.ui.screens
 
+import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,32 +10,43 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.clon_spotify.R
-
+import com.example.clon_spotify.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
-    onLoginClick: () -> Unit = {},
+    viewModel: AuthViewModel,
+    navController: NavController,
+    onLoginSuccess: () -> Unit = {},
     onRegisterClick: () -> Unit = {}
+
 ) {
+    var email by remember { mutableStateOf("") }
+    var showPasswordField by remember { mutableStateOf(false) }
+    var password by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Obtener Activity para Phone Auth
+    val activity = LocalContext.current as Activity
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
             .padding(16.dp),
         contentAlignment = Alignment.Center
-
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            var email by remember { mutableStateOf("") }
 
             // Logo Spotify
             Image(
@@ -45,7 +57,6 @@ fun LoginScreen(
                     .padding(bottom = 16.dp)
             )
 
-            // Título
             Text(
                 text = "Inicia sesión en Spotify",
                 color = Color.White,
@@ -55,12 +66,12 @@ fun LoginScreen(
                 lineHeight = 28.sp
             )
 
-            // Botones sociales (Google, Facebook, Apple, Teléfono)
+            // Botones sociales
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SocialLoginButton (
+                SocialLoginButton(
                     iconRes = R.drawable.google_logo,
                     text = "Continuar con Google",
-                    onClick = onLoginClick
+                    onClick = { /* TODO */ }
                 )
                 SocialLoginButton(
                     iconRes = R.drawable.facebook_logo,
@@ -72,19 +83,31 @@ fun LoginScreen(
                     text = "Iniciar sesión con Apple",
                     onClick = { /* TODO */ }
                 )
-                SocialLoginButton (
+                SocialLoginButton(
                     iconRes = null,
                     text = "Iniciar sesión con número de teléfono",
-                    onClick = { /* TODO */ }
+                    onClick = { navController.navigate("phone_login") }
                 )
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
-            // Campo de texto (email/usuario)
+            // Input de correo
+            Text(
+                text = "Correo electrónico o nombre de usuario",
+                color = Color.White,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 1.dp)
+            )
+
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = {
+                    email = it
+                    showPasswordField = it.isNotBlank()
+                },
                 label = { Text("Ingresa tu correo o usuario") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -101,36 +124,65 @@ fun LoginScreen(
                 )
             )
 
-
-            // Botón Continuar
-            Button(
-                onClick = { onLoginClick() },
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(50)
-            ) {
-                Text("Continuar", color = Color.Black, fontWeight = FontWeight.Bold)
+            // Campo de contraseña (solo si se escribió un correo)
+            if (showPasswordField) {
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Contraseña") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Black,
+                        unfocusedContainerColor = Color.Black,
+                        focusedIndicatorColor = Color.White,
+                        unfocusedIndicatorColor = Color.Gray,
+                        cursorColor = Color.White,
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color.Gray,
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    )
+                )
             }
 
-            //Texto: No tienes cuenta
+            // Botón continuar (solo si se escribió contraseña)
+            if (showPasswordField && password.isNotBlank()) {
+                Button(
+                    onClick = {
+                        if (email.isNotEmpty() && password.isNotEmpty()) {
+                            viewModel.login(email, password) { success, error ->
+                                if (success) onLoginSuccess()
+                                else errorMessage = error
+                            }
+                        } else {
+                            errorMessage = "Completa todos los campos"
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text("Continuar", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            errorMessage?.let {
+                Text(it, color = Color.Red, fontSize = 14.sp)
+            }
+
+            // Texto inferior
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "¿No tienes cuenta?",
-                    color = Color.DarkGray,
-                    fontSize = 14.sp
-                )
-                TextButton(onClick = { onRegisterClick() }) {
-                    Text(
-                        text = "Suscríbete a Spotify",
-                        color = Color.White,
-                        fontSize = 14.sp
-                    )
+                Text("¿No tienes cuenta?", color = Color.DarkGray, fontSize = 14.sp)
+                TextButton(onClick = onRegisterClick) {
+                    Text("Suscríbete a Spotify", color = Color.White, fontSize = 14.sp)
                 }
             }
         }
     }
 }
+

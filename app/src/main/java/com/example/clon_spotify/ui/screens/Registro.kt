@@ -15,15 +15,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.clon_spotify.R
+import com.example.clon_spotify.viewmodel.AuthViewModel
 
 @Composable
 fun RegistroScreen(
-    onRegisterClick: (String) -> Unit = {},
+    viewModel: AuthViewModel,
     onBackToLoginClick: () -> Unit = {},
-    onGoogleClick: () -> Unit = {},
-    onAppleClick: () -> Unit = {}
+    onRegisterSuccess: () -> Unit = {}
 ) {
+    var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -38,6 +43,7 @@ fun RegistroScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Spacer(modifier = Modifier.height(80.dp))
+
             // Logo Spotify
             Image(
                 painter = painterResource(id = R.drawable.spotify_logo),
@@ -46,6 +52,7 @@ fun RegistroScreen(
                     .size(80.dp)
                     .padding(bottom = 16.dp)
             )
+
             // Título
             Text(
                 text = "Regístrate para empezar a escuchar contenido",
@@ -58,15 +65,13 @@ fun RegistroScreen(
                     .fillMaxWidth()
             )
 
-
-            // Campo Email
+            // Nombre
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                placeholder = { Text("nombre@dominio.com", color = Color.Gray) },
-                label = { Text("Dirección de correo electrónico") },
-                modifier = Modifier.fillMaxWidth(),
+                value = nombre,
+                onValueChange = { nombre = it },
+                label = { Text("Nombre completo") },
                 singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Black,
                     unfocusedContainerColor = Color.Black,
@@ -82,14 +87,89 @@ fun RegistroScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Texto: usar número de teléfono
-            TextButton(onClick = { /* TODO */ }) {
-                Text("Usa un número de teléfono en su lugar", color = Color.White)
-            }
+            // Correo
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Correo electrónico") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Black,
+                    unfocusedContainerColor = Color.Black,
+                    focusedIndicatorColor = Color.White,
+                    unfocusedIndicatorColor = Color.Gray,
+                    cursorColor = Color.White,
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color.Gray,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White
+                )
+            )
 
-            // Botón continuar con correo
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Contraseña
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Contraseña") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Black,
+                    unfocusedContainerColor = Color.Black,
+                    focusedIndicatorColor = Color.White,
+                    unfocusedIndicatorColor = Color.Gray,
+                    cursorColor = Color.White,
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color.Gray,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White
+                )
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Confirmar contraseña
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = { Text("Confirmar contraseña") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Black,
+                    unfocusedContainerColor = Color.Black,
+                    focusedIndicatorColor = Color.White,
+                    unfocusedIndicatorColor = Color.Gray,
+                    cursorColor = Color.White,
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color.Gray,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White
+                )
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Botón continuar
             Button(
-                onClick = { onRegisterClick(email) },
+                onClick = {
+                    if (password == confirmPassword && email.isNotEmpty() && password.length >= 6 && nombre.isNotEmpty()) {
+                        isLoading = true
+                        viewModel.register(email, password, nombre) { success, error ->
+                            isLoading = false
+                            if (success) {
+                                onRegisterSuccess()
+                            } else {
+                                errorMessage = error
+                            }
+                        }
+                    } else {
+                        errorMessage = "Completa todos los campos y revisa la contraseña"
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(50)
@@ -97,29 +177,18 @@ fun RegistroScreen(
                 Text("Siguiente", color = Color.Black, fontWeight = FontWeight.Bold)
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Separador "o"
-            Text("O", color = Color.White, fontSize = 14.sp)
-            Spacer(modifier = Modifier.height(20.dp))
+            // Mostrar errores
+            errorMessage?.let {
+                Text(it, color = Color.Red, fontSize = 14.sp)
+            }
 
-            // Botón Google
-            SocialLoginButton (
-                iconRes = R.drawable.google_logo,
-                text = "Regístrate con Google",
-                onClick = onGoogleClick
-            )
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.Green, modifier = Modifier.padding(top = 8.dp))
+            }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Botón Apple
-            SocialLoginButton (
-                iconRes = R.drawable.apple_logo,
-                text = "Regístrate con Apple",
-                onClick = onAppleClick
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Texto inferior
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -136,3 +205,5 @@ fun RegistroScreen(
         }
     }
 }
+
+

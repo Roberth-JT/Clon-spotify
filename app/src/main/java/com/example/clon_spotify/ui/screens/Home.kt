@@ -27,12 +27,13 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.res.painterResource
 import com.example.clon_spotify.R
-
+import com.example.clon_spotify.viewmodel.PhoneAuthViewModel
 
 
 //  Pantalla principal
 @Composable
-fun HomeScreen(navController: NavHostController) {
+fun HomeScreen(navController: NavHostController,  phoneAuthViewModel: PhoneAuthViewModel
+) {
     Scaffold(
         containerColor = Color.Black,
         bottomBar = { BottomNavigationBar() } //  Implementa barra inferior
@@ -49,9 +50,30 @@ fun HomeScreen(navController: NavHostController) {
             item { RecentsSection() }
             item { MoreOfWhatYouLike() }
             item { Spacer(modifier = Modifier.height(80.dp)) }
+            // 🔹 Botón cerrar sesión
+            item {
+                Button(
+                    onClick = {
+                        phoneAuthViewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo("home") { inclusive = true }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Cerrar sesión", color = Color.White)
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(80.dp)) }
+
         }
     }
 }
+
 //barra inferior flotante
 @Composable
 fun BottomNavigationBar() {
