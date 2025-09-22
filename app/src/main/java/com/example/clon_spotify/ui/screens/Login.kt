@@ -1,5 +1,6 @@
 package com.example.clon_spotify.ui.screens
 
+
 import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,14 +26,12 @@ fun LoginScreen(
     navController: NavController,
     onLoginSuccess: () -> Unit = {},
     onRegisterClick: () -> Unit = {}
-
 ) {
     var email by remember { mutableStateOf("") }
     var showPasswordField by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var localErrorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Obtener Activity para Phone Auth
     val activity = LocalContext.current as Activity
 
     Box(
@@ -48,7 +47,6 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
 
-            // Logo Spotify
             Image(
                 painter = painterResource(id = R.drawable.spotify_logo),
                 contentDescription = "Logo Spotify",
@@ -71,7 +69,15 @@ fun LoginScreen(
                 SocialLoginButton(
                     iconRes = R.drawable.google_logo,
                     text = "Continuar con Google",
-                    onClick = { /* TODO */ }
+                    onClick = {
+                        viewModel.loginWithGoogle(activity) { success ->
+                            if (success) {
+                                onLoginSuccess()
+                            } else {
+                                localErrorMessage = viewModel.authMessage
+                            }
+                        }
+                    }
                 )
                 SocialLoginButton(
                     iconRes = R.drawable.facebook_logo,
@@ -92,7 +98,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Input de correo
+            // Email / password fields
             Text(
                 text = "Correo electrónico o nombre de usuario",
                 color = Color.White,
@@ -124,7 +130,6 @@ fun LoginScreen(
                 )
             )
 
-            // Campo de contraseña (solo si se escribió un correo)
             if (showPasswordField) {
                 OutlinedTextField(
                     value = password,
@@ -146,17 +151,19 @@ fun LoginScreen(
                 )
             }
 
-            // Botón continuar (solo si se escribió contraseña)
             if (showPasswordField && password.isNotBlank()) {
                 Button(
                     onClick = {
                         if (email.isNotEmpty() && password.isNotEmpty()) {
                             viewModel.login(email, password) { success, error ->
-                                if (success) onLoginSuccess()
-                                else errorMessage = error
+                                if (success) {
+                                    onLoginSuccess()
+                                } else {
+                                    localErrorMessage = error
+                                }
                             }
                         } else {
-                            errorMessage = "Completa todos los campos"
+                            localErrorMessage = "Completa todos los campos"
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
@@ -167,7 +174,15 @@ fun LoginScreen(
                 }
             }
 
-            errorMessage?.let {
+            // Mostrar carga si corresponde
+            if (viewModel.isLoading) {
+                Spacer(modifier = Modifier.height(16.dp))
+                CircularProgressIndicator(color = Color.White)
+            }
+
+            // Mostrar mensaje de error local
+            localErrorMessage?.let {
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(it, color = Color.Red, fontSize = 14.sp)
             }
 
@@ -185,4 +200,3 @@ fun LoginScreen(
         }
     }
 }
-

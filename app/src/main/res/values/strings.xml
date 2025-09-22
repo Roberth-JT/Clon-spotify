@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">clon-spotify</string>
     <string name="title_activity_login">LoginActivity</string>
+    <string name="default_web_client_id">470608401948-nmdp19d08hstipbboig35bd8sf2m59ng.apps.googleusercontent.com</string>
+
 </resources>

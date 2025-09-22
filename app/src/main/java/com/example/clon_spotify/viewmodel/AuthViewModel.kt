@@ -1,26 +1,32 @@
 package com.example.clon_spotify.viewmodel
 
+
+import android.content.Context
 import android.util.Log
+import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
-import com.google.firebase.Firebase
-import com.google.firebase.auth.auth
-import com.google.firebase.firestore.firestore
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class AuthViewModel : ViewModel() {
-    var userId by mutableStateOf("")
+    var userId by mutableStateOf<String?>(null)
     var isValidAuth by mutableStateOf(false)
     var isLoading by mutableStateOf(false)
-    var authMessage by mutableStateOf("")
+    var authMessage by mutableStateOf<String?>(null)
 
-    private val auth = Firebase.auth
-    private val firestore = Firebase.firestore
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 
-    // 🔹 Registro con Firestore
-    fun register(email: String, password: String, nombre: String, onResult: (Boolean, String?) -> Unit) {
+    fun register(
+        email: String,
+        password: String,
+        nombre: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
         isLoading = true
+        authMessage = null
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener { result ->
                 val uid = result.user?.uid ?: ""
@@ -31,51 +37,66 @@ class AuthViewModel : ViewModel() {
                 )
                 firestore.collection("usuarios").document(uid).set(userMap)
                     .addOnSuccessListener {
-                        authMessage = ""
                         isLoading = false
                         isValidAuth = true
                         userId = uid
                         onResult(true, null)
                     }
                     .addOnFailureListener { error ->
-                        authMessage = "Error guardando datos: ${error.localizedMessage}"
                         isLoading = false
+                        authMessage = "Error guardando datos: ${error.localizedMessage}"
+                        Log.e("AuthViewModel", "Error guardando user", error)
                         onResult(false, authMessage)
                     }
             }
             .addOnFailureListener { error ->
-                Log.e("SPOTIFY_APP", "Error al registrar", error)
-                authMessage = error.localizedMessage ?: "Error al registrar"
                 isLoading = false
-                isValidAuth = false
+                authMessage = "Error al registrar: ${error.localizedMessage}"
+                Log.e("AuthViewModel", "Error registrar", error)
                 onResult(false, authMessage)
             }
     }
 
-    // 🔹 Login con FirebaseAuth
-    fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
+    fun login(
+        email: String,
+        password: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
         isLoading = true
+        authMessage = null
         auth.signInWithEmailAndPassword(email, password)
             .addOnSuccessListener { result ->
-                authMessage = ""
                 isLoading = false
                 isValidAuth = true
-                userId = result.user?.uid ?: ""
+                userId = result.user?.uid
                 onResult(true, null)
             }
             .addOnFailureListener { error ->
-                Log.e("SPOTIFY_APP", "Error al iniciar sesión", error)
-                authMessage = "Usuario y/o contraseña incorrecto"
                 isLoading = false
                 isValidAuth = false
+                authMessage = "Usuario y/o contraseña incorrectos"
+                Log.e("AuthViewModel", "Login failed", error)
                 onResult(false, authMessage)
             }
     }
 
-    // 🔹 Cerrar sesión
-    fun logout() {
-        auth.signOut()
-        isValidAuth = false
-        userId = ""
+    fun loginWithGoogle(
+        context: Context,
+        onResult: (Boolean) -> Unit
+    ) {
+        isLoading = true
+        authMessage = null
+        GoogleAuthHelper.signInWithGoogle(context) { success, uid, error ->
+            isLoading = false
+            if (success && uid != null) {
+                isValidAuth = true
+                userId = uid
+                onResult(true)
+            } else {
+                isValidAuth = false
+                authMessage = error
+                onResult(false)
+            }
+        }
     }
 }
