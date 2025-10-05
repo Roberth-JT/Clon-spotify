@@ -1,6 +1,5 @@
 package com.example.clon_spotify.ui.screens
 
-
 import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,8 +23,15 @@ import com.example.clon_spotify.viewmodel.AuthViewModel
 fun LoginScreen(
     viewModel: AuthViewModel,
     navController: NavController,
-    onLoginSuccess: () -> Unit = {},
-    onRegisterClick: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {
+        // ✅ Solo corregimos la ruta aquí
+        navController.navigate("home_graph") {
+            popUpTo("login") { inclusive = true }
+        }
+    },
+    onRegisterClick: () -> Unit = {
+        navController.navigate("registro")
+    }
 ) {
     var email by remember { mutableStateOf("") }
     var showPasswordField by remember { mutableStateOf(false) }
@@ -194,7 +200,7 @@ fun LoginScreen(
             ) {
                 Text("¿No tienes cuenta?", color = Color.DarkGray, fontSize = 14.sp)
                 TextButton(onClick = onRegisterClick) {
-                    Text("Suscríbete a Spotify", color = Color.White, fontSize = 14.sp)
+                    Text("Regístrate en Spotify", color = Color.White, fontSize = 14.sp)
                 }
             }
         }

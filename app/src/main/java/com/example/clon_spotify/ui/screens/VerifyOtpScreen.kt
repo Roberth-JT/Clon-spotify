@@ -55,7 +55,7 @@ fun VerifyOtpScreen(
             // Navegar a Home si se autenticó correctamente
             LaunchedEffect(viewModel.isAuthSuccess) {
                 if (viewModel.isAuthSuccess) {
-                    navController.navigate("home") {
+                    navController.navigate("home_graph") {
                         popUpTo("login") { inclusive = true }
                     }
                 }

@@ -62,6 +62,8 @@ dependencies {
 
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-gson:3.0.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
 
     implementation("com.google.accompanist:accompanist-flowlayout:0.31.5-beta")
 
@@ -78,6 +80,9 @@ dependencies {
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     implementation("com.google.firebase:firebase-auth-ktx:22.2.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.5")
+    implementation("androidx.compose.material3:material3:1.3.0")
+    implementation("com.google.firebase:firebase-firestore-ktx:24.0.2")
 
 
 }

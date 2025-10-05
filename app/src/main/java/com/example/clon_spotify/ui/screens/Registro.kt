@@ -14,14 +14,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.clon_spotify.R
 import com.example.clon_spotify.viewmodel.AuthViewModel
 
 @Composable
 fun RegistroScreen(
     viewModel: AuthViewModel,
-    onBackToLoginClick: () -> Unit = {},
-    onRegisterSuccess: () -> Unit = {}
+    navController: NavController,
+    onBackToLoginClick: () -> Unit = {
+        navController.navigate("login") {
+            popUpTo("registro") { inclusive = true }
+        }
+    },
+    onRegisterSuccess: () -> Unit = {
+        // ✅ Corrección de ruta al home
+        navController.navigate("home_graph") {
+            popUpTo("registro") { inclusive = true }
+        }
+    }
 ) {
     var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -205,5 +216,3 @@ fun RegistroScreen(
         }
     }
 }
-
-
