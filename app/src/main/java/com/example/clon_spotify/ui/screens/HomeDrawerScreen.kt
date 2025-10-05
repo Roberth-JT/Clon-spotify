@@ -24,16 +24,6 @@ import com.example.clon_spotify.ui.components.MiniPlayer
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
-// Models used by UI
-data class SongUi(val id: String, val title: String, val artist: String, val imageUrl: String)
-data class PlaylistUi(
-    val id: String,
-    val title: String,
-    val description: String?,
-    val imageUrl: String,
-    val songs: List<SongUi> = emptyList()
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeDrawerScreen(
