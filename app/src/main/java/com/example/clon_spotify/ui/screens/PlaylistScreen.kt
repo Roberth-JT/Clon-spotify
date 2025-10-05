@@ -38,7 +38,7 @@ fun PlaylistScreen(playlistId: String?) {
     // 🔹 Intentamos buscar la playlist en todas las colecciones
     LaunchedEffect(playlistId) {
         if (playlistId != null) {
-            val collections = listOf("playlists", "mixes", "recomendados")
+            val collections = listOf("playlists", "mixes", "recomendados", "albumes")
             for (col in collections) {
                 val doc = firestore.collection(col).document(playlistId).get().await()
                 if (doc.exists()) {
