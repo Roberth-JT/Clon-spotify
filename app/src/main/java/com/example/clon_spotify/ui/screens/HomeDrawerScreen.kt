@@ -2,10 +2,7 @@ package com.example.clon_spotify.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -35,15 +32,18 @@ fun HomeDrawerScreen(
     val currentUser = FirebaseAuth.getInstance().currentUser
     val displayName = currentUser?.displayName ?: currentUser?.email ?: "Usuario"
 
+    // 👇 Estado del menú de creación
+    var showCreateDialog by remember { mutableStateOf(false) }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(modifier = Modifier.background(Color(0xFF0B0B0B))) {
                 DrawerHeader(displayName = displayName, photoUrl = currentUser?.photoUrl?.toString())
                 Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray)
-                DrawerItem(label = "Novedades") { /* placeholder */ }
-                DrawerItem(label = "Contenido reciente") { /* placeholder */ }
-                DrawerItem(label = "Configuración y privacidad") { /* placeholder */ }
+                DrawerItem(label = "Novedades") { /* acción */ }
+                DrawerItem(label = "Contenido reciente") { /* acción */ }
+                DrawerItem(label = "Configuración y privacidad") { /* acción */ }
                 Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray)
                 DrawerItem(label = "Cerrar sesión", icon = Icons.Default.Logout) {
                     FirebaseAuth.getInstance().signOut()
@@ -51,7 +51,6 @@ fun HomeDrawerScreen(
                         popUpTo(0)
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     ) {
@@ -80,7 +79,10 @@ fun HomeDrawerScreen(
             },
             containerColor = Color(0xFF0B0B0B),
             bottomBar = {
-                HomeBottomBar(navController = navController, onCreate = { /* handled in content with state */ })
+                HomeBottomBar(
+                    navController = navController,
+                    onCreateClick = { showCreateDialog = true } // 🔹 abre el modal de crear playlist
+                )
             }
         ) { padding ->
             HomeContent(
@@ -90,8 +92,16 @@ fun HomeDrawerScreen(
                 navController = navController,
                 onOpenPlaylist = onOpenPlaylist
             )
+
+            // 🎵 Mini Player
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
                 MiniPlayer()
+            }
+
+            //  Menú Crear Playlist
+            if (showCreateDialog) {
+                showCreateDialog = false
+                navController.navigate("create_playlist")
             }
         }
     }

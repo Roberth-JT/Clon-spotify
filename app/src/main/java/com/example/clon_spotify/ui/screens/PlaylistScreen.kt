@@ -16,33 +16,40 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.models.SongUi
-
-
+import com.example.clon_spotify.viewmodel.HomeViewModel
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistScreen(playlistId: String?) {
     val firestore = FirebaseFirestore.getInstance()
+    val viewModel: HomeViewModel = viewModel()
 
     var playlist by remember { mutableStateOf<PlaylistUi?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedSong by remember { mutableStateOf<SongUi?>(null) }
 
-    // 🔸 Carga de playlist desde Firestore
+    // 🔹 Intentamos buscar la playlist en todas las colecciones
     LaunchedEffect(playlistId) {
         if (playlistId != null) {
-            val doc = firestore.collection("playlists").document(playlistId).get().await()
-            playlist = doc.toObject(PlaylistUi::class.java)
+            val collections = listOf("playlists", "mixes", "recomendados")
+            for (col in collections) {
+                val doc = firestore.collection(col).document(playlistId).get().await()
+                if (doc.exists()) {
+                    playlist = doc.toObject(PlaylistUi::class.java)
+                    break
+                }
+            }
         }
     }
 
-    // ⏳ Loading State
+    // 🔸 Estado de carga
     if (playlist == null) {
         Box(
             modifier = Modifier
@@ -55,7 +62,7 @@ fun PlaylistScreen(playlistId: String?) {
         return
     }
 
-    // 🔽 Opciones inferiores
+    // 🔽 BottomSheet de opciones
     if (showBottomSheet && selectedSong != null) {
         SongOptionsBottomSheet(
             song = selectedSong!!,
@@ -163,10 +170,7 @@ fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
                 .background(Color(0xFF181818))
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 8.dp)
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
                 AsyncImage(
                     model = song.imageUrl,
                     contentDescription = song.title,
@@ -196,7 +200,7 @@ fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
             Divider(color = Color.DarkGray, thickness = 0.7.dp)
 
             OptionItem("https://cdn-icons-png.flaticon.com/512/552/552721.png", "Ir a radio de la canción")
-            OptionItem("https://cdn-icons-png.flaticon.com/512/1250/1250615.png", "Ver los créditos de la canción")
+            OptionItem("https://cdn-icons-png.flaticon.com/512/1250/1250615.png", "Ver créditos de la canción")
             OptionItem("https://cdn-icons-png.flaticon.com/512/992/992703.png", "Mostrar código de Spotify")
 
             Spacer(modifier = Modifier.height(20.dp))

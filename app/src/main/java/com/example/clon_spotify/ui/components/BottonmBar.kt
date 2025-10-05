@@ -7,9 +7,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
-
 @Composable
-fun HomeBottomBar(navController: NavController, onCreate: () -> Unit) {
+fun HomeBottomBar(
+    navController: NavController,
+    onCreateClick: () -> Unit
+) {
     NavigationBar(containerColor = Color.Black) {
         NavigationBarItem(
             selected = false,
@@ -34,7 +36,7 @@ fun HomeBottomBar(navController: NavController, onCreate: () -> Unit) {
         )
         NavigationBarItem(
             selected = false,
-            onClick = onCreate,
+            onClick = onCreateClick,
             icon = { Icon(Icons.Default.Add, contentDescription = "Crear") },
             label = { Text("Crear") },
             alwaysShowLabel = false
