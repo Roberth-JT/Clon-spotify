@@ -1,6 +1,8 @@
 package com.example.clon_spotify.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,8 +39,25 @@ fun PlaylistScreen(playlistId: String?) {
 
     // 🔹 Intentamos buscar la playlist en todas las colecciones
     LaunchedEffect(playlistId) {
-        if (playlistId != null) {
-            val collections = listOf("playlists", "mixes", "recomendados", "albumes")
+        // Si el ID es nulo, no hace nada (evita crash)
+        if (playlistId == null) return@LaunchedEffect
+
+        val collections = listOf("playlists", "mixes", "recomendados", "albumes")
+
+        // 🔹 Caso especial: Playlist "Tus me gusta"
+        if (playlistId == "tus_me_gusta") {
+            val snapshot = firestore.collection("me_gusta").get().await()
+            val likedSongs = snapshot.toObjects(SongUi::class.java)
+
+            playlist = PlaylistUi(
+                id = "tus_me_gusta",
+                title = "Tus me gusta",
+                description = "Canciones que marcaste con ❤️",
+                imageUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
+                songs = likedSongs
+            )
+        } else {
+            // 🔹 Buscar en las colecciones
             for (col in collections) {
                 val doc = firestore.collection(col).document(playlistId).get().await()
                 if (doc.exists()) {
@@ -48,6 +67,7 @@ fun PlaylistScreen(playlistId: String?) {
             }
         }
     }
+
 
     // 🔸 Estado de carga
     if (playlist == null) {
@@ -158,6 +178,10 @@ fun PlaylistScreen(playlistId: String?) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val firestore = FirebaseFirestore.getInstance()
+    var isSaving by remember { mutableStateOf(false) }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF181818),
@@ -170,6 +194,7 @@ fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
                 .background(Color(0xFF181818))
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            // 🎵 Información de la canción
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
                 AsyncImage(
                     model = song.imageUrl,
@@ -188,6 +213,36 @@ fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
             Divider(color = Color.DarkGray, thickness = 0.7.dp)
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Botón: Agregar a Tus me gusta
+            OptionItem(
+                iconUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
+                label = if (isSaving) "Guardando..." else "Agregar a Tus me gusta",
+                onClick = {
+                    if (!isSaving) {
+                        isSaving = true
+                        val songRef = firestore.collection("me_gusta").document(song.id)
+
+                        songRef.get().addOnSuccessListener { doc ->
+                            if (doc.exists()) {
+                                Toast.makeText(context, "Ya está en tus me gusta 💜", Toast.LENGTH_SHORT).show()
+                                isSaving = false
+                            } else {
+                                songRef.set(song)
+                                    .addOnSuccessListener {
+                                        Toast.makeText(context, "Agregado a Tus me gusta 💜", Toast.LENGTH_SHORT).show()
+                                        isSaving = false
+                                    }
+                                    .addOnFailureListener {
+                                        Toast.makeText(context, "Error al agregar 😢", Toast.LENGTH_SHORT).show()
+                                        isSaving = false
+                                    }
+                            }
+                        }
+                    }
+                }
+            )
+
+            // 🔹 Resto de opciones
             OptionItem("https://cdn-icons-png.flaticon.com/512/786/786205.png", "Compartir")
             OptionItem("https://cdn-icons-png.flaticon.com/512/1828/1828817.png", "Agregar a otra playlist")
             OptionItem("https://cdn-icons-png.flaticon.com/512/1828/1828843.png", "Eliminar de esta playlist")
@@ -209,11 +264,12 @@ fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
 }
 
 @Composable
-fun OptionItem(iconUrl: String, label: String) {
+fun OptionItem(iconUrl: String, label: String, onClick: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp),
+            .padding(vertical = 12.dp)
+            .let { if (onClick != null) it.clickable { onClick() } else it },
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(

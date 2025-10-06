@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -34,24 +35,34 @@ fun HomeContent(
     var mixes by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var recomendados by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var albumes by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
+    var likedSongs by remember { mutableStateOf<List<SongUi>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(true) {
-        val playlistsRef = firestore.collection("playlists")
-        val mixesRef = firestore.collection("mixes")
-        val recomRef = firestore.collection("recomendados")
-        val albumRef = firestore.collection("albumes")
+        val firestore = FirebaseFirestore.getInstance()
 
-        // Actualizar Firestore con listas base
-        samplePlaylists().forEach { playlistsRef.document(it.id).set(it, SetOptions.merge()) }
-        sampleMixes().forEach { mixesRef.document(it.id).set(it, SetOptions.merge()) }
-        sampleRecomendados().forEach { recomRef.document(it.id).set(it, SetOptions.merge()) }
-        sampleAlbumes().forEach { albumRef.document(it.id).set(it, SetOptions.merge()) }
+        // Escucha en tiempo real para playlists del usuario
+        firestore.collection("playlists").addSnapshotListener { snapshot, e ->
+            if (snapshot != null) {
+                playlists = snapshot.toObjects(PlaylistUi::class.java)
+            }
+        }
 
-        playlists = playlistsRef.get().await().documents.mapNotNull { it.toObject(PlaylistUi::class.java) }
-        mixes = mixesRef.get().await().documents.mapNotNull { it.toObject(PlaylistUi::class.java) }
-        recomendados = recomRef.get().await().documents.mapNotNull { it.toObject(PlaylistUi::class.java) }
-        albumes = albumRef.get().await().documents.mapNotNull { it.toObject(PlaylistUi::class.java) }
+        firestore.collection("mixes").addSnapshotListener { snapshot, e ->
+            if (snapshot != null) mixes = snapshot.toObjects(PlaylistUi::class.java)
+        }
+
+        firestore.collection("recomendados").addSnapshotListener { snapshot, e ->
+            if (snapshot != null) recomendados = snapshot.toObjects(PlaylistUi::class.java)
+        }
+
+        firestore.collection("albumes").addSnapshotListener { snapshot, e ->
+            if (snapshot != null) albumes = snapshot.toObjects(PlaylistUi::class.java)
+        }
+
+        firestore.collection("me_gusta").addSnapshotListener { snapshot, e ->
+            if (snapshot != null) likedSongs = snapshot.toObjects(SongUi::class.java)
+        }
 
         isLoading = false
     }
@@ -69,6 +80,7 @@ fun HomeContent(
             .padding(horizontal = 12.dp)
     ) {
         item {
+            // 🔹 Filtros
             val chips = listOf("Todas", "Música", "Podcasts")
             var selectedChip by remember { mutableStateOf("Todas") }
 
@@ -89,10 +101,27 @@ fun HomeContent(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 🔹 Bloque de "Tus me gusta" con cuadrícula
+            // 🔹 Playlists del usuario (incluye las creadas dinámicamente)
+            if (playlists.isNotEmpty()) {
+                GridPlaylists(playlists, onOpenPlaylist)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 🔹 Bloque “Tus me gusta”
             Text("Tus me gusta", color = Color.White, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-            GridPlaylists(playlists.take(4), onOpenPlaylist)
+
+            val tusMeGusta = PlaylistUi(
+                id = "tus_me_gusta",
+                title = "Tus me gusta",
+                description = if (likedSongs.isEmpty()) "Canciones que marcarás con ❤️"
+                else "${likedSongs.size} canciones guardadas",
+                imageUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
+                songs = likedSongs
+            )
+
+            GridPlaylists(listOf(tusMeGusta), onOpenPlaylist)
 
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -113,6 +142,7 @@ fun HomeContent(
         }
     }
 }
+
 
 /* --- 🎧 ESTILO DE SPOTIFY --- */
 
@@ -211,25 +241,27 @@ fun SectionCarousel(title: String, items: List<PlaylistUi>, onOpenPlaylist: (Str
 /** 🎧 Playlists base **/
 fun samplePlaylists(): List<PlaylistUi> {
     val mixFavoritosSongs = listOf(
-        SongUi("s1", "Easy On Me", "Adele", "https://i.scdn.co/image/ab67616d0000b2730b1f5d905e76a24d03a9c7b7"),
-        SongUi("s2", "Talking to the Moon", "Bruno Mars", "https://i.scdn.co/image/ab67616d0000b2734b4c4e084bcb9f6ce0d93e5b")
-    )
+        SongUi("s1", "Someone Like You", "Adele", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcReGAWa2LtEOvbGwwNb2GGL93VJklHmXR6chQ&s"),
+        SongUi("s2", "Can't Feel My Face", "The Weeknd", "https://media.gq.com.mx/photos/610492e73b54691d4e5cc00b/16:9/w_2560%2Cc_limit/weeknd-gq-cover-september-2021-10.jpg"),
+        SongUi("s3", "24K Magic", "Bruno Mars", "https://i.scdn.co/image/ab67616d0000b273232711f7d66a1e19e89e28c5"),
+        SongUi("s4", "Turning Tables", "Adele", "https://ichef.bbci.co.uk/ace/ws/640/cpsprodpb/d4d7/live/5aa3f190-4454-11ef-96a8-e710c6bfc866.jpg.webp"),
+        SongUi("s5", "The Hills", "The Weeknd", "https://i.scdn.co/image/ab67616d00001e027fcead687e99583072cc217b"),
+        SongUi("s6", "Flowers", "Miley Cyrus", "https://i1.sndcdn.com/artworks-YOSTbh90ESawTlzu-s9fROg-t500x500.jpg"),
+        SongUi("s7", "La Incondicional", "Luis Miguel", "https://i.ytimg.com/vi/wOjzo02Tmck/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCjimJjGE7FfMmJDqlZzf7Sk6P0Rg")
+        )
 
-    val tusMeGustaSongs = listOf(
-        SongUi("s3", "Someone Like You", "Adele", "https://i.scdn.co/image/ab67616d0000b273b9e6248f08b9b5684a6d2b0a"),
-        SongUi("s4", "When I Was Your Man", "Bruno Mars", "https://i.scdn.co/image/ab67616d0000b273c64820a1e83d20c7e1d16b7c"),
-        SongUi("s5", "Flowers", "Miley Cyrus", "https://i.scdn.co/image/ab67616d0000b2733bbcd66c6d99c07c94a5e2e3")
-    )
 
     val topColombiaSongs = listOf(
-        SongUi("s6", "Provenza", "Karol G", "https://i.scdn.co/image/ab67616d0000b2733f7657a8fce0b8a7b57b8f6a"),
-        SongUi("s7", "TQG", "Karol G, Shakira", "https://i.scdn.co/image/ab67616d0000b273c79a75aee8459a49d0aaffd5"),
-        SongUi("s8", "La Bachata", "Manuel Turizo", "https://i.scdn.co/image/ab67616d0000b273e12c2bf5c7e92522fb3718a1")
+        SongUi("s1", "Chantaje", "Shakira ft. Maluma", "https://media.gq.com.mx/photos/67169a3da507995d05846d85/16:9/w_2128,h_1197,c_limit/Shakira%20posando%20para%20GQ.jpg"),
+        SongUi("s2", "Besos en Guerra", "Morat ft. Juanes", "https://www.agendapop.cl/wp-content/uploads/2018/01/Morat-2.jpg"),
+        SongUi("s3", "La Bachata", "Manuel Turizo", "https://i.scdn.co/image/ab67616d0000b273e12c2bf5c7e92522fb3718a1"),
+        SongUi("s4", "TQG", "Shakira, Karol G", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWc3k8iv1Mk6VwIekrV6qoSHuvbWaNeA18eg&s"),
+        SongUi("s5", "Porfa No Te Vayas", "Morat & Beret", "https://i.scdn.co/image/ab67616d0000b2734cac4c4431908529b744ec9b")
     )
+
 
     return listOf(
         PlaylistUi("p1", "Mix Favoritos", "Tus canciones más escuchadas", "https://www.ukeysoft.com/wp-content/uploads/2023/03/spotify-cover-art.png", mixFavoritosSongs),
-        PlaylistUi("p2", "Tus me gusta", "Canciones que marcaste con ❤️", "https://misc.scdn.co/liked-songs/liked-songs-640.png", tusMeGustaSongs),
         PlaylistUi("p3", "Top Colombia", "Los éxitos más escuchados del país", "https://charts-images.scdn.co/assets/locale_en/regional/daily/region_co_default.jpg", topColombiaSongs)
     )
 }

@@ -8,6 +8,7 @@ import com.example.clon_spotify.ui.screens.CreatePlaylistDialog
 import com.example.clon_spotify.ui.screens.HomeDrawerScreen
 import com.example.clon_spotify.ui.screens.PlaylistScreen
 import com.example.clon_spotify.ui.screens.SearchScreen
+import com.example.clon_spotify.ui.screens.TusMeGustaScreen
 
 @Composable
 fun HomeNavGraph() {
@@ -35,5 +36,9 @@ fun HomeNavGraph() {
             val playlistId = backStackEntry.arguments?.getString("playlistId")
             PlaylistScreen(playlistId = playlistId)
         }
+        composable("tus_me_gusta") {
+            TusMeGustaScreen()
+        }
+
     }
 }
