@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.clon_spotify.player.PlayerViewModel
+import com.example.clon_spotify.ui.screens.BibliotecaScreen
 import com.example.clon_spotify.ui.screens.CreatePlaylistDialog
 import com.example.clon_spotify.ui.screens.HomeDrawerScreen
 import com.example.clon_spotify.ui.screens.PlaylistScreen
@@ -46,5 +47,15 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel) {
         composable("tus_me_gusta") {
             TusMeGustaScreen(playerViewModel = playerViewModel)
         }
+
+                composable("library") {
+                    BibliotecaScreen(
+                        homeNavController = homeNavController,
+                        onOpenPlaylist = { playlistId ->
+                            // Navegar a los detalles de la playlist
+                            homeNavController.navigate("playlist_detail/$playlistId")
+                        }
+                    )
+                }
     }
 }
