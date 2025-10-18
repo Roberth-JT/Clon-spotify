@@ -24,7 +24,7 @@ fun LoginScreen(
     viewModel: AuthViewModel,
     navController: NavController,
     onLoginSuccess: () -> Unit = {
-        // ✅ Solo corregimos la ruta aquí
+        //  Solo corregimos la ruta aquí
         navController.navigate("home_graph") {
             popUpTo("login") { inclusive = true }
         }

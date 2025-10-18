@@ -1,9 +1,11 @@
 package com.example.clon_spotify.navigation
 
 import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.ui.screens.CreatePlaylistDialog
 import com.example.clon_spotify.ui.screens.HomeDrawerScreen
 import com.example.clon_spotify.ui.screens.PlaylistScreen
@@ -11,7 +13,7 @@ import com.example.clon_spotify.ui.screens.SearchScreen
 import com.example.clon_spotify.ui.screens.TusMeGustaScreen
 
 @Composable
-fun HomeNavGraph() {
+fun HomeNavGraph(playerViewModel: PlayerViewModel) {
     val homeNavController = rememberNavController()
 
     NavHost(
@@ -21,24 +23,28 @@ fun HomeNavGraph() {
         composable("home_drawer") {
             HomeDrawerScreen(
                 navController = homeNavController,
+                playerViewModel = playerViewModel,  // ← PASAR AQUÍ
                 onOpenPlaylist = { id -> homeNavController.navigate("playlist/$id") }
             )
-
         }
+
         composable("create_playlist") {
             CreatePlaylistDialog(navController = homeNavController)
         }
 
-
-        composable("search") { SearchScreen() }
+        composable("search") { SearchScreen(playerViewModel = playerViewModel) }
 
         composable("playlist/{playlistId}") { backStackEntry ->
             val playlistId = backStackEntry.arguments?.getString("playlistId")
-            PlaylistScreen(playlistId = playlistId)
-        }
-        composable("tus_me_gusta") {
-            TusMeGustaScreen()
+            PlaylistScreen(
+                playlistId = playlistId,
+                playerViewModel = playerViewModel
+            )
         }
 
+
+        composable("tus_me_gusta") {
+            TusMeGustaScreen(playerViewModel = playerViewModel)
+        }
     }
 }

@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.firebase.firestore.FirebaseFirestore
@@ -23,11 +24,14 @@ import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.models.SongUi
+import com.example.clon_spotify.player.PlayerViewModel
 
 @Composable
 fun HomeContent(
+
     modifier: Modifier = Modifier,
     navController: NavController,
+    playerViewModel: PlayerViewModel,
     onOpenPlaylist: (String) -> Unit
 ) {
     val firestore = FirebaseFirestore.getInstance()
@@ -38,9 +42,8 @@ fun HomeContent(
     var likedSongs by remember { mutableStateOf<List<SongUi>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(true) {
-        val firestore = FirebaseFirestore.getInstance()
-
+    LaunchedEffect(Unit) {
+        val db = FirebaseFirestore.getInstance()
         // Escucha en tiempo real para playlists del usuario
         firestore.collection("playlists").addSnapshotListener { snapshot, e ->
             if (snapshot != null) {
@@ -48,24 +51,35 @@ fun HomeContent(
             }
         }
 
-        firestore.collection("mixes").addSnapshotListener { snapshot, e ->
+        db.collection("playlists").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            if (snapshot != null) playlists = snapshot.toObjects(PlaylistUi::class.java)
+        }
+
+        db.collection("mixes").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
             if (snapshot != null) mixes = snapshot.toObjects(PlaylistUi::class.java)
         }
 
-        firestore.collection("recomendados").addSnapshotListener { snapshot, e ->
+        db.collection("recomendados").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
             if (snapshot != null) recomendados = snapshot.toObjects(PlaylistUi::class.java)
         }
 
-        firestore.collection("albumes").addSnapshotListener { snapshot, e ->
+        db.collection("albumes").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
             if (snapshot != null) albumes = snapshot.toObjects(PlaylistUi::class.java)
         }
 
-        firestore.collection("me_gusta").addSnapshotListener { snapshot, e ->
+        db.collection("me_gusta").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
             if (snapshot != null) likedSongs = snapshot.toObjects(SongUi::class.java)
         }
 
+
         isLoading = false
     }
+
 
     if (isLoading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -240,9 +254,10 @@ fun SectionCarousel(title: String, items: List<PlaylistUi>, onOpenPlaylist: (Str
 
 /** 🎧 Playlists base **/
 fun samplePlaylists(): List<PlaylistUi> {
+
     val mixFavoritosSongs = listOf(
         SongUi("s1", "Someone Like You", "Adele", "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcReGAWa2LtEOvbGwwNb2GGL93VJklHmXR6chQ&s"),
-        SongUi("s2", "Can't Feel My Face", "The Weeknd", "https://media.gq.com.mx/photos/610492e73b54691d4e5cc00b/16:9/w_2560%2Cc_limit/weeknd-gq-cover-september-2021-10.jpg"),
+        SongUi("s2", "BlindingLights", "The Weeknd", "https://media.gq.com.mx/photos/610492e73b54691d4e5cc00b/16:9/w_2560%2Cc_limit/weeknd-gq-cover-september-2021-10.jpg"),
         SongUi("s3", "24K Magic", "Bruno Mars", "https://i.scdn.co/image/ab67616d0000b273232711f7d66a1e19e89e28c5"),
         SongUi("s4", "Turning Tables", "Adele", "https://ichef.bbci.co.uk/ace/ws/640/cpsprodpb/d4d7/live/5aa3f190-4454-11ef-96a8-e710c6bfc866.jpg.webp"),
         SongUi("s5", "The Hills", "The Weeknd", "https://i.scdn.co/image/ab67616d00001e027fcead687e99583072cc217b"),

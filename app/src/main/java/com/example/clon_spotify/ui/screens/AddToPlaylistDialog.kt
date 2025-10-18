@@ -22,7 +22,7 @@ fun AddToPlaylistDialog(
     var isLoading by remember { mutableStateOf(true) }
     var message by remember { mutableStateOf<String?>(null) }
 
-    // 🔹 Cargar playlists del usuario (por ahora todas)
+    //  Cargar playlists del usuario (por ahora todas)
     LaunchedEffect(Unit) {
         firestore.collection("playlists")
             .get()
@@ -48,7 +48,7 @@ fun AddToPlaylistDialog(
                     )
                 } else if (playlists.isEmpty()) {
                     Text(
-                        "No tienes playlists creadas 😔",
+                        "No tienes playlists creadas ",
                         color = Color.Gray
                     )
                 } else {
@@ -63,7 +63,7 @@ fun AddToPlaylistDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                playlist.title, // ✅ se usa title, no name
+                                playlist.title, //
                                 color = if (selectedPlaylist == playlist) Color(0xFF1DB954) else Color.White
                             )
                             if (selectedPlaylist == playlist) {
@@ -85,7 +85,7 @@ fun AddToPlaylistDialog(
                     selectedPlaylist?.let { playlist ->
                         val playlistRef = firestore.collection("playlists").document(playlist.id)
 
-                        // 🔹 Agregar la canción a la lista de songs del documento playlist
+                        //  Agregar la canción a la lista de songs del documento playlist
                         playlistRef.get()
                             .addOnSuccessListener { snapshot ->
                                 val current = snapshot.toObject(PlaylistUi::class.java)
@@ -93,10 +93,10 @@ fun AddToPlaylistDialog(
 
                                 playlistRef.update("songs", updatedSongs)
                                     .addOnSuccessListener {
-                                        message = "✅ Canción agregada a '${playlist.title}'"
+                                        message = " Canción agregada a '${playlist.title}'"
                                     }
                                     .addOnFailureListener {
-                                        message = "❌ Error al agregar la canción"
+                                        message = " Error al agregar la canción"
                                     }
                             }
                     }

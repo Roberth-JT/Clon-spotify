@@ -9,7 +9,9 @@ android {
     namespace = "com.example.clon_spotify"
     compileSdk = 36
 
+
     defaultConfig {
+
         applicationId = "com.example.clon_spotify"
         minSdk = 29
         targetSdk = 36
@@ -17,7 +19,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+
     }
+
+
 
     buildTypes {
         release {
@@ -38,6 +44,7 @@ android {
     buildFeatures {
         compose = true
     }
+
 }
 
 dependencies {
@@ -84,5 +91,15 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.3.0")
     implementation("com.google.firebase:firebase-firestore-ktx:24.0.2")
 
+    // ExoPlayer / Media3
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
 
-}
+    //iconos
+    implementation("androidx.compose.material:material-icons-extended")
+
+
+
+
+
+    }

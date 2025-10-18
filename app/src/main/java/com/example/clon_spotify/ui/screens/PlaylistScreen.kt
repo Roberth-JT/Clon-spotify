@@ -23,15 +23,18 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.models.SongUi
+import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.viewmodel.HomeViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlaylistScreen(playlistId: String?) {
+fun PlaylistScreen(playlistId: String?,playerViewModel: PlayerViewModel
+) {
     val firestore = FirebaseFirestore.getInstance()
     val viewModel: HomeViewModel = viewModel()
+
 
     var playlist by remember { mutableStateOf<PlaylistUi?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -138,7 +141,9 @@ fun PlaylistScreen(playlistId: String?) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 8.dp)
+                            .clickable {   // AL TOCAR UNA CANCIÓN
+                            },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
