@@ -1,12 +1,12 @@
 package com.example.clon_spotify.player
 
-
 import android.content.Context
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.clon_spotify.models.SongUi
 import com.google.firebase.firestore.FirebaseFirestore
@@ -28,14 +28,26 @@ class PlayerViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    val trackList = mutableListOf<SongUi>()
-    private var currentIndex = -1
-
-    //verificar si la cancion esta en faovritos variables:
     private val _isFavorite = MutableStateFlow(false)
     val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
 
+    val trackList = mutableListOf<SongUi>()
+    private var currentIndex = -1
+    private var currentPlaylistId: String? = null
 
+    /**
+     * Asigna la lista de reproducción actual
+     */
+    fun setPlaylist(tracks: List<SongUi>, trackStartIndex: Int = 0, playlistId: String? = null) {
+        trackList.clear()
+        trackList.addAll(tracks)
+        currentIndex = trackStartIndex.coerceIn(0, trackList.size - 1)
+        currentPlaylistId = playlistId
+    }
+
+    /**
+     * Reproduce una canción
+     */
     fun playSong(song: SongUi, context: Context) {
         viewModelScope.launch {
             try {
@@ -44,25 +56,22 @@ class PlayerViewModel : ViewModel() {
                 }
 
                 exoPlayer?.apply {
+                    stop()
+                    clearMediaItems()
                     setMediaItem(MediaItem.fromUri(song.audioUrl))
                     prepare()
+                    playWhenReady = true
                     play()
 
-                    addListener(object : Player.Listener {
-                        override fun onPlaybackStateChanged(state: Int) {
-                            _isPlaying.value = state == Player.STATE_READY && playWhenReady
-                        }
-                    })
-                    checkIfFavorite()
-
+                    removeListener(listener)
+                    addListener(listener)
                 }
 
                 _currentSong.value = song
                 _isPlaying.value = true
                 _errorMessage.value = null
-
-                // Actualiza índice actual
                 currentIndex = trackList.indexOfFirst { it.id == song.id }
+                checkIfFavorite()
 
             } catch (e: Exception) {
                 _errorMessage.value = "Error al reproducir: ${e.localizedMessage}"
@@ -70,10 +79,60 @@ class PlayerViewModel : ViewModel() {
             }
         }
     }
+
+    private val listener = object : Player.Listener {
+        override fun onPlaybackStateChanged(state: Int) {
+            _isPlaying.value = state == Player.STATE_READY && (exoPlayer?.playWhenReady ?: false)
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            _errorMessage.value = "Player error: ${error.message}"
+        }
+    }
+
+    fun pause() {
+        exoPlayer?.pause()
+        _isPlaying.value = false
+    }
+
+    fun resume() {
+        exoPlayer?.play()
+        _isPlaying.value = true
+    }
+
+    fun togglePlayPause() {
+        if (exoPlayer?.isPlaying == true) pause() else resume()
+    }
+
+    fun playNext(context: Context) {
+        if (trackList.isNotEmpty()) {
+            currentIndex = (currentIndex + 1) % trackList.size
+            playSong(trackList[currentIndex], context)
+        }
+    }
+
+    fun playPrevious(context: Context) {
+        if (trackList.isNotEmpty()) {
+            currentIndex = if (currentIndex - 1 < 0) trackList.size - 1 else currentIndex - 1
+            playSong(trackList[currentIndex], context)
+        }
+    }
+
+    fun getCurrentPosition(): Long = exoPlayer?.currentPosition ?: 0L
+    fun getDuration(): Long = exoPlayer?.duration ?: 0L
+    fun seekTo(position: Long) = exoPlayer?.seekTo(position)
+
+    fun formatTime(millis: Long): String {
+        val totalSeconds = millis / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return String.format("%d:%02d", minutes, seconds)
+    }
+
     fun addCurrentSongToFavorites(context: Context) {
         val song = _currentSong.value ?: return
-        val firestore = FirebaseFirestore.getInstance()
-        firestore.collection("me_gusta")
+        FirebaseFirestore.getInstance()
+            .collection("me_gusta")
             .document(song.id)
             .set(song)
             .addOnSuccessListener {
@@ -85,67 +144,23 @@ class PlayerViewModel : ViewModel() {
             }
     }
 
-    //funcion que verifica si las canciones esta en me gusta :
-fun checkIfFavorite() {
-    val song = _currentSong.value ?: return
-    FirebaseFirestore.getInstance()
-        .collection("me_gusta")
-        .document(song.id)
-        .get()
-        .addOnSuccessListener { document ->
-            _isFavorite.value = document.exists()
-        }
-        .addOnFailureListener {
-            _isFavorite.value = false
-        }
-}
-
-
-    fun playNext(context: Context) {
-        if (trackList.isNotEmpty()) {
-            currentIndex = (currentIndex + 1) % trackList.size
-            val nextSong = trackList[currentIndex]
-            playSong(nextSong, context)
-        }
-    }
-
-    fun playPrevious(context: Context) {
-        if (trackList.isNotEmpty()) {
-            currentIndex = if (currentIndex - 1 < 0) trackList.size - 1 else currentIndex - 1
-            val prevSong = trackList[currentIndex]
-            playSong(prevSong, context)
-        }
-    }
-
-    fun togglePlayPause() {
-        exoPlayer?.let {
-            if (it.isPlaying) {
-                it.pause()
-                _isPlaying.value = false
-            } else {
-                it.play()
-                _isPlaying.value = true
+    fun checkIfFavorite() {
+        val song = _currentSong.value ?: return
+        FirebaseFirestore.getInstance()
+            .collection("me_gusta")
+            .document(song.id)
+            .get()
+            .addOnSuccessListener { doc ->
+                _isFavorite.value = doc.exists()
             }
-        }
+            .addOnFailureListener {
+                _isFavorite.value = false
+            }
     }
-    fun getCurrentPosition(): Long = exoPlayer?.currentPosition ?: 0L
-    fun getDuration(): Long = exoPlayer?.duration ?: 0L
-
-    fun formatTime(millis: Long): String {
-        val totalSeconds = millis / 1000
-        val minutes = totalSeconds / 60
-        val seconds = totalSeconds % 60
-        return String.format("%d:%02d", minutes, seconds)
-    }
-
-    fun seekTo(position: Long) {
-        exoPlayer?.seekTo(position)
-    }
-
-
 
     override fun onCleared() {
         super.onCleared()
+        exoPlayer?.removeListener(listener)
         exoPlayer?.release()
         exoPlayer = null
     }

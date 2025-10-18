@@ -23,6 +23,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.models.SongUi
+import com.example.clon_spotify.player.MiniPlayer
 import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.viewmodel.HomeViewModel
 import com.google.firebase.firestore.FirebaseFirestore
@@ -30,28 +31,27 @@ import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlaylistScreen(playlistId: String?,playerViewModel: PlayerViewModel
+fun PlaylistScreen(
+    playlistId: String?,
+    playerViewModel: PlayerViewModel
 ) {
     val firestore = FirebaseFirestore.getInstance()
     val viewModel: HomeViewModel = viewModel()
-
+    val context = LocalContext.current
 
     var playlist by remember { mutableStateOf<PlaylistUi?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedSong by remember { mutableStateOf<SongUi?>(null) }
 
-    // 🔹 Intentamos buscar la playlist en todas las colecciones
+    // 🔹 Cargar la playlist desde Firestore
     LaunchedEffect(playlistId) {
-        // Si el ID es nulo, no hace nada (evita crash)
         if (playlistId == null) return@LaunchedEffect
 
         val collections = listOf("playlists", "mixes", "recomendados", "albumes")
 
-        // 🔹 Caso especial: Playlist "Tus me gusta"
         if (playlistId == "tus_me_gusta") {
             val snapshot = firestore.collection("me_gusta").get().await()
             val likedSongs = snapshot.toObjects(SongUi::class.java)
-
             playlist = PlaylistUi(
                 id = "tus_me_gusta",
                 title = "Tus me gusta",
@@ -60,7 +60,6 @@ fun PlaylistScreen(playlistId: String?,playerViewModel: PlayerViewModel
                 songs = likedSongs
             )
         } else {
-            // 🔹 Buscar en las colecciones
             for (col in collections) {
                 val doc = firestore.collection(col).document(playlistId).get().await()
                 if (doc.exists()) {
@@ -71,8 +70,7 @@ fun PlaylistScreen(playlistId: String?,playerViewModel: PlayerViewModel
         }
     }
 
-
-    // 🔸 Estado de carga
+    // Pantalla de carga
     if (playlist == null) {
         Box(
             modifier = Modifier
@@ -85,15 +83,21 @@ fun PlaylistScreen(playlistId: String?,playerViewModel: PlayerViewModel
         return
     }
 
-    // 🔽 BottomSheet de opciones
+    // BottomSheet de opciones
     if (showBottomSheet && selectedSong != null) {
         SongOptionsBottomSheet(
             song = selectedSong!!,
-            onDismiss = { showBottomSheet = false }
+            playlist = playlist!!,
+            onDismiss = { showBottomSheet = false },
+            onSongDeleted = { deletedSong ->
+                playlist = playlist!!.copy(
+                    songs = playlist!!.songs.filter { it.id != deletedSong.id }
+                )
+            }
         )
     }
 
-    // 🎧 Pantalla principal
+    // 🎧 UI principal
     Scaffold(
         topBar = {
             TopAppBar(
@@ -101,7 +105,13 @@ fun PlaylistScreen(playlistId: String?,playerViewModel: PlayerViewModel
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
             )
         },
-        containerColor = Color(0xFF0B0B0B)
+        containerColor = Color(0xFF0B0B0B),
+        bottomBar = {
+            val currentSong by playerViewModel.currentSong.collectAsState()
+            if (currentSong != null) {
+                MiniPlayer(playerViewModel)
+            }
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -137,34 +147,42 @@ fun PlaylistScreen(playlistId: String?,playerViewModel: PlayerViewModel
 
             LazyColumn {
                 items(playlist!!.songs.size) { idx ->
-                    val s = playlist!!.songs[idx]
+                    val song = playlist!!.songs[idx]
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
-                            .clickable {   // AL TOCAR UNA CANCIÓN
+                            .clickable {
+                                playerViewModel.playSong(song, context)
+                                Toast.makeText(
+                                    context,
+                                    "Reproduciendo: ${song.title}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
-                                .data(s.imageUrl)
+                                .data(song.imageUrl)
                                 .crossfade(true)
                                 .build(),
-                            contentDescription = s.title,
+                            contentDescription = song.title,
                             modifier = Modifier
                                 .size(56.dp)
                                 .clip(RoundedCornerShape(8.dp))
                         )
+
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(s.title, color = Color.White)
-                            Text(s.artist, color = Color.LightGray)
+                            Text(song.title, color = Color.White)
+                            Text(song.artist, color = Color.LightGray)
                         }
 
                         IconButton(onClick = {
-                            selectedSong = s
+                            selectedSong = song
                             showBottomSheet = true
                         }) {
                             Icon(
@@ -182,7 +200,12 @@ fun PlaylistScreen(playlistId: String?,playerViewModel: PlayerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
+fun SongOptionsBottomSheet(
+    song: SongUi,
+    playlist: PlaylistUi,
+    onDismiss: () -> Unit,
+    onSongDeleted: (SongUi) -> Unit
+) {
     val context = LocalContext.current
     val firestore = FirebaseFirestore.getInstance()
     var isSaving by remember { mutableStateOf(false) }
@@ -199,7 +222,6 @@ fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
                 .background(Color(0xFF181818))
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            // 🎵 Información de la canción
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
                 AsyncImage(
                     model = song.imageUrl,
@@ -218,7 +240,7 @@ fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
             Divider(color = Color.DarkGray, thickness = 0.7.dp)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Botón: Agregar a Tus me gusta
+            // ❤️ Agregar a Me gusta
             OptionItem(
                 iconUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
                 label = if (isSaving) "Guardando..." else "Agregar a Tus me gusta",
@@ -226,7 +248,6 @@ fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
                     if (!isSaving) {
                         isSaving = true
                         val songRef = firestore.collection("me_gusta").document(song.id)
-
                         songRef.get().addOnSuccessListener { doc ->
                             if (doc.exists()) {
                                 Toast.makeText(context, "Ya está en tus me gusta 💜", Toast.LENGTH_SHORT).show()
@@ -247,23 +268,50 @@ fun SongOptionsBottomSheet(song: SongUi, onDismiss: () -> Unit) {
                 }
             )
 
-            // 🔹 Resto de opciones
+            // 📤 Compartir
             OptionItem("https://cdn-icons-png.flaticon.com/512/786/786205.png", "Compartir")
+
+            // ➕ Agregar a otra playlist
             OptionItem("https://cdn-icons-png.flaticon.com/512/1828/1828817.png", "Agregar a otra playlist")
-            OptionItem("https://cdn-icons-png.flaticon.com/512/1828/1828843.png", "Eliminar de esta playlist")
+
+            // ❌ Eliminar (soporta playlists o tus me gusta)
+            OptionItem(
+                iconUrl = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png",
+                label = "Eliminar de esta playlist",
+                onClick = {
+                    if (playlist.id == "tus_me_gusta") {
+                        // Eliminar de me gusta
+                        firestore.collection("me_gusta")
+                            .document(song.id)
+                            .delete()
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Eliminado de Tus me gusta 💔", Toast.LENGTH_SHORT).show()
+                                onSongDeleted(song)
+                                onDismiss()
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Error al eliminar", Toast.LENGTH_SHORT).show()
+                            }
+                    } else {
+                        // Eliminar de playlist normal
+                        firestore.collection("playlists")
+                            .document(playlist.id)
+                            .update("songs", playlist.songs.filter { it.id != song.id })
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Canción eliminada ❌", Toast.LENGTH_SHORT).show()
+                                onSongDeleted(song)
+                                onDismiss()
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Error al eliminar", Toast.LENGTH_SHORT).show()
+                            }
+                    }
+                }
+            )
 
             Divider(color = Color.DarkGray, thickness = 0.7.dp)
-
             OptionItem("https://cdn-icons-png.flaticon.com/512/565/565547.png", "Ir al álbum")
             OptionItem("https://cdn-icons-png.flaticon.com/512/747/747376.png", "Ir al artista")
-
-            Divider(color = Color.DarkGray, thickness = 0.7.dp)
-
-            OptionItem("https://cdn-icons-png.flaticon.com/512/552/552721.png", "Ir a radio de la canción")
-            OptionItem("https://cdn-icons-png.flaticon.com/512/1250/1250615.png", "Ver créditos de la canción")
-            OptionItem("https://cdn-icons-png.flaticon.com/512/992/992703.png", "Mostrar código de Spotify")
-
-            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
@@ -284,11 +332,6 @@ fun OptionItem(iconUrl: String, label: String, onClick: (() -> Unit)? = null) {
                 .size(40.dp)
                 .padding(end = 16.dp)
         )
-        Text(
-            label,
-            color = Color.White,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Normal
-        )
+        Text(label, color = Color.White, fontSize = 17.sp)
     }
 }

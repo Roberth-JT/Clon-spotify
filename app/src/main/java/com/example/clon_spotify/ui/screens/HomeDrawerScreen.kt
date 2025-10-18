@@ -23,7 +23,6 @@ import com.example.clon_spotify.player.MiniPlayer
 import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.ui.components.HomeBottomBar
 import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +30,9 @@ import kotlinx.coroutines.launch
 fun HomeDrawerScreen(
     navController: NavController,
     playerViewModel: PlayerViewModel,
-    onOpenPlaylist: (playlistId: String) -> Unit = { id -> navController.navigate("playlist/$id") }
+    onOpenPlaylist: (playlistId: String) -> Unit = { id ->
+        navController.navigate("playlist/$id")
+    }
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -39,8 +40,6 @@ fun HomeDrawerScreen(
     val displayName = currentUser?.displayName ?: currentUser?.email ?: "Usuario"
 
     var showCreateDialog by remember { mutableStateOf(false) }
-
-
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -84,15 +83,32 @@ fun HomeDrawerScreen(
             },
             containerColor = Color(0xFF0B0B0B),
             bottomBar = {
-                HomeBottomBar(
-                    navController = navController,
-                    onCreateClick = { showCreateDialog = true }
-                )
+                // 🔹 MiniPlayer arriba + espacio + barra inferior
+                Column {
+                    // MiniPlayer con elevación y fondo
+                    Surface(
+                        tonalElevation = 8.dp,
+                        shadowElevation = 12.dp,
+                        color = Color(0xFF181818)
+                    ) {
+                        MiniPlayer(playerViewModel = playerViewModel)
+                    }
+
+                    // Espaciado entre el MiniPlayer y la barra inferior
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Barra inferior que nunca se oculta
+                    HomeBottomBar(
+                        navController = navController,
+                        onCreateClick = { showCreateDialog = true }
+                    )
+                }
             }
         ) { padding ->
-            Box(modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
+            Box(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
             ) {
                 HomeContent(
                     modifier = Modifier.fillMaxSize(),

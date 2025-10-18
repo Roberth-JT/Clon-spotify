@@ -1,12 +1,12 @@
 package com.example.clon_spotify.ui.components
 
-
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
+
 @Composable
 fun HomeBottomBar(
     navController: NavController,
@@ -36,7 +36,7 @@ fun HomeBottomBar(
         )
         NavigationBarItem(
             selected = false,
-            onClick = onCreateClick,
+            onClick = onCreateClick, // ✅ aquí abriremos el diálogo
             icon = { Icon(Icons.Default.Add, contentDescription = "Crear") },
             label = { Text("Crear") },
             alwaysShowLabel = false

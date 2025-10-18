@@ -71,7 +71,7 @@ fun NavGraph(
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 4.dp)
                 ) {
-                    MiniPlayer(playerViewModel = playerViewModel)
+
                 }
             }
 
