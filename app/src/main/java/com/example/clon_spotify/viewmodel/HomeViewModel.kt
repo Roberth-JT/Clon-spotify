@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.ui.screens.sampleMixes
-import com.example.clon_spotify.ui.screens.samplePlaylists
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,15 +29,6 @@ class HomeViewModel : ViewModel() {
         viewModelScope.launch {
             val playlistsRef = firestore.collection("playlists")
             val mixesRef = firestore.collection("mixes")
-
-            playlistsRef.get().addOnSuccessListener { snapshot ->
-                if (snapshot.isEmpty) {
-                    // Si la colección no existe, la creamos con tus datos por defecto
-                    val defaultPlaylists = samplePlaylists()
-                    defaultPlaylists.forEach { playlistsRef.document(it.id).set(it) }
-                }
-            }
-
             mixesRef.get().addOnSuccessListener { snapshot ->
                 if (snapshot.isEmpty) {
                     val defaultMixes = sampleMixes()
