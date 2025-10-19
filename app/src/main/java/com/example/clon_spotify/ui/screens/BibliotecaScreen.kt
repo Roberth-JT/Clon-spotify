@@ -1,3 +1,4 @@
+// BibliotecaScreen.kt
 package com.example.clon_spotify.ui.screens
 
 import androidx.compose.foundation.background
@@ -38,7 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.models.SongUi
@@ -46,16 +47,20 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun BibliotecaScreen(
-    onOpenPlaylist: (String) -> Unit,
-    homeNavController: NavHostController
-)
-{
+    homeNavController: NavController,
+    onOpenPlaylist: (String) -> Unit
+) {
     val firestore = FirebaseFirestore.getInstance()
     var playlists by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var likedSongs by remember { mutableStateOf<List<SongUi>>(emptyList()) }
+    var albumes by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
+    var artistas by remember { mutableStateOf<List<Artista>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Obtener datos en tiempo real igual que en HomeContent
+    // Estado para el filtro seleccionado
+    var selectedFilter by remember { mutableStateOf("Playlists") }
+
+    // Obtener datos en tiempo real
     LaunchedEffect(Unit) {
         // Escuchar playlists del usuario
         firestore.collection("playlists").addSnapshotListener { snapshot, e ->
@@ -68,6 +73,18 @@ fun BibliotecaScreen(
         firestore.collection("me_gusta").addSnapshotListener { snapshot, error ->
             if (error != null) return@addSnapshotListener
             if (snapshot != null) likedSongs = snapshot.toObjects(SongUi::class.java)
+        }
+
+        // Escuchar álbumes
+        firestore.collection("albumes").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            if (snapshot != null) albumes = snapshot.toObjects(PlaylistUi::class.java)
+        }
+
+        // Escuchar artistas (necesitarás crear esta colección)
+        firestore.collection("artistas").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            if (snapshot != null) artistas = snapshot.toObjects(Artista::class.java)
         }
 
         isLoading = false
@@ -119,33 +136,49 @@ fun BibliotecaScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FilterChip(
-                selected = true,
-                onClick = { },
+                selected = selectedFilter == "Playlists",
+                onClick = { selectedFilter = "Playlists" },
                 label = { Text("Playlists", color = Color.White) }
             )
             FilterChip(
-                selected = false,
-                onClick = { },
+                selected = selectedFilter == "Artistas",
+                onClick = { selectedFilter = "Artistas" },
                 label = { Text("Artistas", color = Color.White) }
             )
             FilterChip(
-                selected = false,
-                onClick = { },
+                selected = selectedFilter == "Álbumes",
+                onClick = { selectedFilter = "Álbumes" },
                 label = { Text("Álbumes", color = Color.White) }
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Lista de playlists
-        LibraryPlaylistsList(
-            playlists = playlists,
-            likedSongs = likedSongs,
-            onOpenPlaylist = onOpenPlaylist
-        )
+        // Contenido según el filtro seleccionado
+        when (selectedFilter) {
+            "Playlists" -> LibraryPlaylistsList(
+                playlists = playlists,
+                likedSongs = likedSongs,
+                onOpenPlaylist = onOpenPlaylist
+            )
+            "Artistas" -> LibraryArtistsList(
+                artistas = artistas,
+                onArtistClick = { artistaId ->
+                    // Navegar a pantalla del artista
+                    homeNavController.navigate("artist/$artistaId")
+                }
+            )
+            "Álbumes" -> LibraryAlbumsList(
+                albumes = albumes,
+                onAlbumClick = { albumId ->
+                    onOpenPlaylist(albumId)
+                }
+            )
+        }
     }
 }
 
+// Componente para lista de Playlists (ya lo tenías)
 @Composable
 fun LibraryPlaylistsList(
     playlists: List<PlaylistUi>,
@@ -153,7 +186,6 @@ fun LibraryPlaylistsList(
     onOpenPlaylist: (String) -> Unit
 ) {
     val allPlaylists = remember(playlists, likedSongs) {
-        // Crear playlist de "Tus me gusta" si hay canciones
         val tusMeGusta = if (likedSongs.isNotEmpty()) {
             listOf(
                 PlaylistUi(
@@ -179,18 +211,7 @@ fun LibraryPlaylistsList(
     ) {
         if (allPlaylists.isEmpty()) {
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No tienes playlists aún",
-                        color = Color.Gray,
-                        fontSize = 16.sp
-                    )
-                }
+                EmptyState(message = "No tienes playlists aún")
             }
         } else {
             items(allPlaylists) { playlist ->
@@ -203,6 +224,158 @@ fun LibraryPlaylistsList(
     }
 }
 
+// Componente para lista de Artistas
+@Composable
+fun LibraryArtistsList(
+    artistas: List<Artista>,
+    onArtistClick: (String) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (artistas.isEmpty()) {
+            item {
+                EmptyState(message = "No tienes artistas seguidos")
+            }
+        } else {
+            items(artistas) { artista ->
+                LibraryArtistItem(
+                    artista = artista,
+                    onArtistClick = { onArtistClick(artista.id) }
+                )
+            }
+        }
+    }
+}
+
+// Componente para lista de Álbumes
+@Composable
+fun LibraryAlbumsList(
+    albumes: List<PlaylistUi>,
+    onAlbumClick: (String) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (albumes.isEmpty()) {
+            item {
+                EmptyState(message = "No tienes álbumes guardados")
+            }
+        } else {
+            items(albumes) { album ->
+                LibraryAlbumItem(
+                    album = album,
+                    onAlbumClick = { onAlbumClick(album.id) }
+                )
+            }
+        }
+    }
+}
+
+// Item para Artista
+@Composable
+fun LibraryArtistItem(artista: Artista, onArtistClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
+        onClick = onArtistClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Imagen circular del artista
+            AsyncImage(
+                model = artista.imageUrl,
+                contentDescription = artista.name,
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(25.dp)) // Circular
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = artista.name,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1
+                )
+
+                Text(
+                    text = "Artista",
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+// Item para Álbum
+@Composable
+fun LibraryAlbumItem(album: PlaylistUi, onAlbumClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
+        onClick = onAlbumClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = album.imageUrl,
+                contentDescription = album.title,
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(6.dp))
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = album.title,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1
+                )
+
+                Text(
+                    text = "Álbum • ${album.description ?: ""}",
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+// Item para Playlist (ya lo tenías)
 @Composable
 fun LibraryPlaylistItem(playlist: PlaylistUi, onPlaylistClick: () -> Unit) {
     Card(
@@ -218,7 +391,6 @@ fun LibraryPlaylistItem(playlist: PlaylistUi, onPlaylistClick: () -> Unit) {
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Imagen de la playlist
             AsyncImage(
                 model = playlist.imageUrl,
                 contentDescription = playlist.title,
@@ -255,6 +427,23 @@ fun LibraryPlaylistItem(playlist: PlaylistUi, onPlaylistClick: () -> Unit) {
     }
 }
 
+// Estado vacío
+@Composable
+fun EmptyState(message: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = message,
+            color = Color.Gray,
+            fontSize = 16.sp
+        )
+    }
+}
+
 @Composable
 fun FilterChip(
     selected: Boolean,
@@ -272,3 +461,12 @@ fun FilterChip(
         )
     )
 }
+
+// Modelo de Artista (necesitas crear este data class)
+data class Artista(
+    val id: String = "",
+    val name: String = "",
+    val imageUrl: String = "",
+    val followers: Int = 0,
+    val genres: List<String> = emptyList()
+)

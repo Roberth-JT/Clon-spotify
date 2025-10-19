@@ -1,8 +1,14 @@
 package com.example.clon_spotify.ui.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
@@ -15,7 +21,7 @@ fun HomeBottomBar(
     NavigationBar(containerColor = Color.Black) {
         NavigationBarItem(
             selected = false,
-            onClick = { navController.navigate("home_nav") },
+            onClick = { navController.navigate("home_drawer") }, // ← CAMBIADO A "home_drawer"
             icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
             label = { Text("Inicio") },
             alwaysShowLabel = false
@@ -36,7 +42,7 @@ fun HomeBottomBar(
         )
         NavigationBarItem(
             selected = false,
-            onClick = onCreateClick, // ✅ aquí abriremos el diálogo
+            onClick = onCreateClick,
             icon = { Icon(Icons.Default.Add, contentDescription = "Crear") },
             label = { Text("Crear") },
             alwaysShowLabel = false

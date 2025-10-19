@@ -1,7 +1,6 @@
 package com.example.clon_spotify.navigation
 
-import androidx.compose.runtime.*
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -24,7 +23,16 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel) {
         composable("home_drawer") {
             HomeDrawerScreen(
                 navController = homeNavController,
-                playerViewModel = playerViewModel,  // ← PASAR AQUÍ
+                playerViewModel = playerViewModel,
+                onOpenPlaylist = { id -> homeNavController.navigate("playlist/$id") }
+            )
+        }
+
+        // Agregar esta ruta adicional para el NavigationBarItem
+        composable("home_nav") {
+            HomeDrawerScreen(
+                navController = homeNavController,
+                playerViewModel = playerViewModel,
                 onOpenPlaylist = { id -> homeNavController.navigate("playlist/$id") }
             )
         }
@@ -33,7 +41,9 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel) {
             CreatePlaylistDialog(navController = homeNavController)
         }
 
-        composable("search") { SearchScreen(playerViewModel = playerViewModel) }
+        composable("search") {
+            SearchScreen(playerViewModel = playerViewModel)
+        }
 
         composable("playlist/{playlistId}") { backStackEntry ->
             val playlistId = backStackEntry.arguments?.getString("playlistId")
@@ -43,19 +53,17 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel) {
             )
         }
 
-
         composable("tus_me_gusta") {
             TusMeGustaScreen(playerViewModel = playerViewModel)
         }
 
-                composable("library") {
-                    BibliotecaScreen(
-                        homeNavController = homeNavController,
-                        onOpenPlaylist = { playlistId ->
-                            // Navegar a los detalles de la playlist
-                            homeNavController.navigate("playlist_detail/$playlistId")
-                        }
-                    )
+        composable("library") {
+            BibliotecaScreen(
+                homeNavController = homeNavController,
+                onOpenPlaylist = { playlistId ->
+                    homeNavController.navigate("playlist/$playlistId") // ← También cambiar aquí si es necesario
                 }
+            )
+        }
     }
 }
