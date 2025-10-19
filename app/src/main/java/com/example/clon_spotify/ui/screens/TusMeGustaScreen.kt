@@ -17,26 +17,33 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.clon_spotify.models.SongUi
 import com.example.clon_spotify.player.PlayerViewModel
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TusMeGustaScreen(playerViewModel: PlayerViewModel) {
     val firestore = FirebaseFirestore.getInstance()
+    val usuariosId = FirebaseAuth.getInstance().currentUser?.uid
     var canciones by remember { mutableStateOf<List<SongUi>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(Unit) {
-        firestore.collection("me_gusta")
-            .get()
-            .addOnSuccessListener { snapshot ->
-                canciones = snapshot.toObjects(SongUi::class.java)
-                isLoading = false
-            }
-            .addOnFailureListener {
-                isLoading = false
-            }
+    LaunchedEffect(usuariosId) {
+        if (usuariosId != null) {
+            firestore.collection("usuarios")
+                .document(usuariosId)
+                .collection("me_gusta")
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        canciones = snapshot.toObjects(SongUi::class.java)
+                    }
+                    isLoading = false
+                }
+        } else {
+            isLoading = false
+        }
     }
+
 
     Scaffold(
         topBar = {

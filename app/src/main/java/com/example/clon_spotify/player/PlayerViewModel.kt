@@ -131,7 +131,15 @@ class PlayerViewModel : ViewModel() {
 
     fun addCurrentSongToFavorites(context: Context) {
         val song = _currentSong.value ?: return
+        val usuariosId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        if (usuariosId == null) {
+            Toast.makeText(context, "Error: usuario no autenticado", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         FirebaseFirestore.getInstance()
+            .collection("usuarios")
+            .document(usuariosId)
             .collection("me_gusta")
             .document(song.id)
             .set(song)
@@ -144,9 +152,14 @@ class PlayerViewModel : ViewModel() {
             }
     }
 
+
     fun checkIfFavorite() {
         val song = _currentSong.value ?: return
+        val usuariosId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return
+
         FirebaseFirestore.getInstance()
+            .collection("usuarios")
+            .document(usuariosId)
             .collection("me_gusta")
             .document(song.id)
             .get()
@@ -157,6 +170,7 @@ class PlayerViewModel : ViewModel() {
                 _isFavorite.value = false
             }
     }
+
 
     override fun onCleared() {
         super.onCleared()

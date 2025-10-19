@@ -9,6 +9,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.clon_spotify.models.PlaylistUi
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.UUID
 
@@ -22,6 +23,7 @@ fun CreatePlaylistDialog(
     var showDialog by remember { mutableStateOf(true) }
 
     val firestore = FirebaseFirestore.getInstance()
+
 
     if (showDialog) {
         AlertDialog(
@@ -71,21 +73,25 @@ fun CreatePlaylistDialog(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (playlistTitle.isNotBlank()) {
+                        val userId = FirebaseAuth.getInstance().currentUser?.uid
+                        if (userId != null) {
                             val playlistId = UUID.randomUUID().toString()
+
                             val newPlaylist = PlaylistUi(
                                 id = playlistId,
                                 title = playlistTitle,
                                 description = playlistDescription,
-                                imageUrl = "",
+                                imageUrl = "https://cdn-icons-png.flaticon.com/512/1384/1384060.png", // o la imagen por defecto que uses
                                 songs = emptyList()
                             )
 
-                            firestore.collection("playlists")
+                            firestore.collection("usuarios")
+                                .document(userId)
+                                .collection("playlists")
                                 .document(playlistId)
                                 .set(newPlaylist)
                                 .addOnSuccessListener {
-                                    println("✅ Playlist guardada en Firestore")
+                                    println("✅ Playlist guardada para el usuario $userId")
                                 }
                                 .addOnFailureListener {
                                     println("❌ Error al guardar playlist: ${it.message}")
@@ -94,7 +100,8 @@ fun CreatePlaylistDialog(
 
                         showDialog = false
                         navController.popBackStack()
-                    },
+                    }
+                    ,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954))
                 ) {
                     Text("Crear", color = Color.White)

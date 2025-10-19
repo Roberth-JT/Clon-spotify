@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.models.SongUi
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
@@ -17,14 +18,19 @@ fun AddToPlaylistDialog(
     onDismiss: () -> Unit
 ) {
     val firestore = FirebaseFirestore.getInstance()
+
+
     var playlists by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var selectedPlaylist by remember { mutableStateOf<PlaylistUi?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var message by remember { mutableStateOf<String?>(null) }
 
-    //  Cargar playlists del usuario (por ahora todas)
-    LaunchedEffect(Unit) {
-        firestore.collection("playlists")
+    val usuariosId = FirebaseAuth.getInstance().currentUser?.uid
+    if (usuariosId != null) {
+        firestore.collection("usuarios")
+            .document(usuariosId)
+            .collection("playlists")
+
             .get()
             .addOnSuccessListener { snapshot ->
                 playlists = snapshot.documents.mapNotNull { it.toObject(PlaylistUi::class.java) }
@@ -34,6 +40,7 @@ fun AddToPlaylistDialog(
                 isLoading = false
             }
     }
+
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -83,22 +90,27 @@ fun AddToPlaylistDialog(
             Button(
                 onClick = {
                     selectedPlaylist?.let { playlist ->
-                        val playlistRef = firestore.collection("playlists").document(playlist.id)
+                        val playlistRef = firestore.collection("usuarios")
+                            .document(usuariosId ?: "")
+                            .collection("playlists")
+                            .document(playlist.id ?: "")
 
-                        //  Agregar la canción a la lista de songs del documento playlist
-                        playlistRef.get()
-                            .addOnSuccessListener { snapshot ->
-                                val current = snapshot.toObject(PlaylistUi::class.java)
-                                val updatedSongs = (current?.songs ?: emptyList()) + song
+
+                        playlistRef.get().addOnSuccessListener { doc ->
+                            if (doc.exists()) {
+                                val existingPlaylist = doc.toObject(PlaylistUi::class.java)
+                                val updatedSongs = (existingPlaylist?.songs ?: emptyList()) + song
 
                                 playlistRef.update("songs", updatedSongs)
                                     .addOnSuccessListener {
-                                        message = " Canción agregada a '${playlist.title}'"
+                                        message = "Canción agregada ✅"
                                     }
                                     .addOnFailureListener {
-                                        message = " Error al agregar la canción"
+                                        message = "Error al agregar ❌"
                                     }
                             }
+                        }
+
                     }
                 },
                 enabled = selectedPlaylist != null,

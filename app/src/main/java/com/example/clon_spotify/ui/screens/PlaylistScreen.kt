@@ -26,6 +26,7 @@ import com.example.clon_spotify.models.SongUi
 import com.example.clon_spotify.player.MiniPlayer
 import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.viewmodel.HomeViewModel
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -35,6 +36,7 @@ fun PlaylistScreen(
     playlistId: String?,
     playerViewModel: PlayerViewModel
 ) {
+
     val firestore = FirebaseFirestore.getInstance()
     val viewModel: HomeViewModel = viewModel()
     val context = LocalContext.current
@@ -50,23 +52,42 @@ fun PlaylistScreen(
         val collections = listOf("playlists", "mixes", "recomendados", "albumes")
 
         if (playlistId == "tus_me_gusta") {
-            val snapshot = firestore.collection("me_gusta").get().await()
-            val likedSongs = snapshot.toObjects(SongUi::class.java)
-            playlist = PlaylistUi(
-                id = "tus_me_gusta",
-                title = "Tus me gusta",
-                description = "Canciones que marcaste con ❤️",
-                imageUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
-                songs = likedSongs
-            )
+            val userId = FirebaseAuth.getInstance().currentUser?.uid
+            if (userId != null) {
+                val snapshot = firestore.collection("usuarios")
+                    .document(userId)
+                    .collection("me_gusta")
+                    .get()
+                    .await()
+
+                val likedSongs = snapshot.toObjects(SongUi::class.java)
+                playlist = PlaylistUi(
+                    id = "tus_me_gusta",
+                    title = "Tus me gusta",
+                    description = "Canciones que marcaste con ❤️",
+                    imageUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
+                    songs = likedSongs
+                )
+            }
+
         } else {
             for (col in collections) {
-                val doc = firestore.collection(col).document(playlistId).get().await()
-                if (doc.exists()) {
-                    playlist = doc.toObject(PlaylistUi::class.java)
-                    break
+                val usuariosId = FirebaseAuth.getInstance().currentUser?.uid
+                if (usuariosId != null) {
+                    val doc = firestore.collection("usuarios")
+                        .document(usuariosId)
+                        .collection(col)
+                        .document(playlistId)
+                        .get()
+                        .await()
+
+                    if (doc.exists()) {
+                        playlist = doc.toObject(PlaylistUi::class.java)
+                        break // salimos del for si la encontramos
+                    }
                 }
             }
+
         }
     }
 
@@ -247,7 +268,12 @@ fun SongOptionsBottomSheet(
                 onClick = {
                     if (!isSaving) {
                         isSaving = true
-                        val songRef = firestore.collection("me_gusta").document(song.id)
+                        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@OptionItem
+                        val songRef = firestore.collection("usuarios")
+                            .document(userId)
+                            .collection("me_gusta")
+                            .document(song.id)
+
                         songRef.get().addOnSuccessListener { doc ->
                             if (doc.exists()) {
                                 Toast.makeText(context, "Ya está en tus me gusta 💜", Toast.LENGTH_SHORT).show()
@@ -281,7 +307,10 @@ fun SongOptionsBottomSheet(
                 onClick = {
                     if (playlist.id == "tus_me_gusta") {
                         // Eliminar de me gusta
-                        firestore.collection("me_gusta")
+                        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@OptionItem
+                        firestore.collection("usuarios")
+                            .document(userId)
+                            .collection("me_gusta")
                             .document(song.id)
                             .delete()
                             .addOnSuccessListener {
@@ -294,9 +323,14 @@ fun SongOptionsBottomSheet(
                             }
                     } else {
                         // Eliminar de playlist normal
-                        firestore.collection("playlists")
+                        val usuariosId = FirebaseAuth.getInstance().currentUser?.uid
+
+                        firestore.collection("usuarios")
+                            .document(usuariosId ?: "")
+                            .collection("playlists")
                             .document(playlist.id)
                             .update("songs", playlist.songs.filter { it.id != song.id })
+
                             .addOnSuccessListener {
                                 Toast.makeText(context, "Canción eliminada ❌", Toast.LENGTH_SHORT).show()
                                 onSongDeleted(song)

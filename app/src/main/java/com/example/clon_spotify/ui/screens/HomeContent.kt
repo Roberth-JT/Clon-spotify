@@ -1,6 +1,7 @@
 package com.example.clon_spotify.ui.screens
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,7 +26,9 @@ import coil.compose.AsyncImage
 import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.models.SongUi
 import com.example.clon_spotify.player.PlayerViewModel
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 /**
  * HomeContent: ahora la tarjeta NAVIGATES (onOpenPlaylist) en lugar de reproducir al clickear la card.
@@ -48,36 +51,69 @@ fun HomeContent(
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        // inicializa colecciones si están vacías (misma lógica que tenías)
-        firestore.collection("recomendados").get().addOnSuccessListener { snapshot ->
-            if (snapshot.isEmpty) sampleRecomendados().forEach { firestore.collection("recomendados").document(it.id).set(it) }
-        }
-        firestore.collection("mixes").get().addOnSuccessListener { snapshot ->
-            if (snapshot.isEmpty) sampleMixes().forEach { firestore.collection("mixes").document(it.id).set(it) }
-        }
-        firestore.collection("albumes").get().addOnSuccessListener { snapshot ->
-            if (snapshot.isEmpty) sampleAlbumes().forEach { firestore.collection("albumes").document(it.id).set(it) }
+        val firestore = FirebaseFirestore.getInstance()
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+        if (userId == null) {
+            isLoading = false
+            return@LaunchedEffect
         }
 
-        // listeners en tiempo real
-        firestore.collection("playlists").addSnapshotListener { snapshot, _ ->
-            if (snapshot != null) playlists = snapshot.toObjects(PlaylistUi::class.java)
-        }
-        firestore.collection("mixes").addSnapshotListener { snapshot, _ ->
-            if (snapshot != null) mixes = snapshot.toObjects(PlaylistUi::class.java)
-        }
-        firestore.collection("recomendados").addSnapshotListener { snapshot, _ ->
-            if (snapshot != null) recomendados = snapshot.toObjects(PlaylistUi::class.java)
-        }
-        firestore.collection("albumes").addSnapshotListener { snapshot, _ ->
-            if (snapshot != null) albumes = snapshot.toObjects(PlaylistUi::class.java)
-        }
-        firestore.collection("me_gusta").addSnapshotListener { snapshot, _ ->
-            if (snapshot != null) likedSongs = snapshot.toObjects(SongUi::class.java)
-        }
+        val userDoc = firestore.collection("usuarios").document(userId)
 
-        isLoading = false
+        try {
+            // --- Crear subcolecciones iniciales solo si están vacías ---
+            suspend fun ensureCollectionExists(
+                name: String,
+                sampleData: List<PlaylistUi>
+            ) {
+                val colRef = userDoc.collection(name)
+                val snapshot = colRef.get().await()
+                if (snapshot.isEmpty) {
+                    sampleData.forEach { playlist ->
+                        colRef.document(playlist.id).set(playlist).await()
+                    }
+                }
+            }
+
+            // Inicializamos subcolecciones del usuario si no existen
+            ensureCollectionExists("recomendados", sampleRecomendados())
+            ensureCollectionExists("mixes", sampleMixes())
+            ensureCollectionExists("albumes", sampleAlbumes())
+
+            // --- Listeners en tiempo real ---
+            userDoc.collection("playlists")
+                .addSnapshotListener { snapshot, _ ->
+                    playlists = snapshot?.toObjects(PlaylistUi::class.java) ?: emptyList()
+                }
+
+            userDoc.collection("recomendados")
+                .addSnapshotListener { snapshot, _ ->
+                    recomendados = snapshot?.toObjects(PlaylistUi::class.java) ?: emptyList()
+                }
+
+            userDoc.collection("mixes")
+                .addSnapshotListener { snapshot, _ ->
+                    mixes = snapshot?.toObjects(PlaylistUi::class.java) ?: emptyList()
+                }
+
+            userDoc.collection("albumes")
+                .addSnapshotListener { snapshot, _ ->
+                    albumes = snapshot?.toObjects(PlaylistUi::class.java) ?: emptyList()
+                }
+
+            userDoc.collection("me_gusta")
+                .addSnapshotListener { snapshot, _ ->
+                    likedSongs = snapshot?.toObjects(SongUi::class.java) ?: emptyList()
+                }
+
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error al cargar datos: ${e.message}", Toast.LENGTH_SHORT).show()
+        } finally {
+            isLoading = false
+        }
     }
+
 
     if (isLoading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

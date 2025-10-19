@@ -62,40 +62,53 @@ fun BibliotecaScreen(
 
     // Obtener datos en tiempo real
     LaunchedEffect(Unit) {
-        // Escuchar playlists del usuario
-        firestore.collection("playlists").addSnapshotListener { snapshot, e ->
+        val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+
+        if (userId == null) {
+            isLoading = false
+            return@LaunchedEffect
+        }
+
+        val userDoc = firestore.collection("usuarios").document(userId)
+
+        // 🔹 Escuchar playlists del usuario
+        userDoc.collection("playlists").addSnapshotListener { snapshot, e ->
             if (snapshot != null) {
                 playlists = snapshot.toObjects(PlaylistUi::class.java)
             }
         }
 
-        // Escuchar canciones me gusta
-        firestore.collection("me_gusta").addSnapshotListener { snapshot, error ->
+        // 🔹 Escuchar canciones "Me gusta" del usuario
+        userDoc.collection("me_gusta").addSnapshotListener { snapshot, error ->
             if (error != null) return@addSnapshotListener
             if (snapshot != null) likedSongs = snapshot.toObjects(SongUi::class.java)
         }
 
-        // Escuchar álbumes
-        firestore.collection("albumes").addSnapshotListener { snapshot, error ->
+        // 🔹 Escuchar álbumes del usuario
+        userDoc.collection("albumes").addSnapshotListener { snapshot, error ->
             if (error != null) return@addSnapshotListener
             if (snapshot != null) albumes = snapshot.toObjects(PlaylistUi::class.java)
         }
 
-        // Escuchar artistas (necesitarás crear esta colección)
-        firestore.collection("artistas").addSnapshotListener { snapshot, error ->
-            if (error != null) return@addSnapshotListener
-            if (snapshot != null) artistas = snapshot.toObjects(Artista::class.java)
-        }
+        // 🔹 Generar lista única de artistas en base a las playlists existentes
+        val allSongs = playlists.flatMap { it.songs } +
+                albumes.flatMap { it.songs } +
+                likedSongs
+
+        artistas = allSongs
+            .map { song -> Artista(
+                id = song.artist,
+                name = song.artist,
+                imageUrl = song.imageUrl, // puedes cambiar por imagen distinta si lo prefieres
+                followers = 0,
+                genres = emptyList()
+            )}
+            .distinctBy { it.name }
+
 
         isLoading = false
     }
 
-    if (isLoading) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Color(0xFF1DB954))
-        }
-        return
-    }
 
     Column(
         modifier = Modifier

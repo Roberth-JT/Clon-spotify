@@ -1,5 +1,6 @@
 package com.example.clon_spotify.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,7 @@ import coil.compose.AsyncImage
 import com.example.clon_spotify.models.SongUi
 import com.example.clon_spotify.player.PlayerViewModel
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,25 +36,44 @@ fun SearchScreen(playerViewModel: PlayerViewModel) {
 
     //  Cargar canciones demo a Firestore si no existen
     LaunchedEffect(Unit) {
-        val collection = firestore.collection("songs")
-        collection.get().addOnSuccessListener { snapshot ->
-            if (snapshot.isEmpty) {
-                val demoSongs = demoSongList()
-                demoSongs.forEach { song ->
-                    collection.document(song.id).set(song)
-                }
-                songs = demoSongs
-            } else {
-                songs = snapshot.documents.mapNotNull { it.toObject(SongUi::class.java) }
-            }
-            filteredSongs = songs
-            isLoading = false
+        val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            try {
+                val userSongsCollection = firestore
+                    .collection("usuarios")
+                    .document(userId)
+                    .collection("songs")
 
-            // Agregar canciones al PlayerViewModel
-            playerViewModel.trackList.clear()
-            playerViewModel.trackList.addAll(songs)
+                val snapshot = userSongsCollection.get().await()
+
+                if (snapshot.isEmpty) {
+                    val demoSongs = demoSongList()
+                    demoSongs.forEach { song ->
+                        userSongsCollection.document(song.id).set(song).await()
+                    }
+                    songs = demoSongs
+                } else {
+                    songs = snapshot.documents.mapNotNull { it.toObject(SongUi::class.java) }
+                }
+
+                filteredSongs = songs
+
+                playerViewModel.trackList.clear()
+                playerViewModel.trackList.addAll(songs)
+
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error cargando canciones: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                isLoading = false
+            }
+
+        } else {
+            isLoading = false
+            Toast.makeText(context, "Debes iniciar sesión", Toast.LENGTH_SHORT).show()
         }
     }
+
+
 
     Column(
         modifier = Modifier
