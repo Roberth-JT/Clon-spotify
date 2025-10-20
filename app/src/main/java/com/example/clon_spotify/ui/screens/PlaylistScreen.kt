@@ -127,12 +127,7 @@ fun PlaylistScreen(
             )
         },
         containerColor = Color(0xFF0B0B0B),
-        bottomBar = {
-            val currentSong by playerViewModel.currentSong.collectAsState()
-            if (currentSong != null) {
-                MiniPlayer(playerViewModel)
-            }
-        }
+
     ) { padding ->
         Column(
             modifier = Modifier

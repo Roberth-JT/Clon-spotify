@@ -1,8 +1,6 @@
 package com.example.clon_spotify.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,23 +13,28 @@ import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.ui.screens.LoginScreen
 import com.example.clon_spotify.ui.screens.RegistroScreen
 import com.example.clon_spotify.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
     authViewModel: AuthViewModel
 ) {
-    val startDestination = if (authViewModel.isValidAuth) "home_nav" else "login"
     val playerViewModel: PlayerViewModel = viewModel()
+
+    // 🔹 Detecta si ya hay usuario logueado en Firebase
+    val currentUser = FirebaseAuth.getInstance().currentUser
+
+    val startDestination = if (currentUser != null) "home_nav" else "login"
+
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = startDestination // ✅ AHORA SE USA ESTA VARIABLE
     ) {
-        // Pantalla de login
         composable("login") {
             LoginScreen(
                 viewModel = authViewModel,
-                navController = navController, //
+                navController = navController,
                 onLoginSuccess = {
                     navController.navigate("home_nav") {
                         popUpTo("login") { inclusive = true }
@@ -43,11 +46,10 @@ fun NavGraph(
             )
         }
 
-        //  Pantalla de registro
         composable("register") {
             RegistroScreen(
                 viewModel = authViewModel,
-                navController = navController, // ✅ Se pasa aquí también
+                navController = navController,
                 onRegisterSuccess = {
                     navController.navigate("home_nav") {
                         popUpTo("register") { inclusive = true }
@@ -59,23 +61,22 @@ fun NavGraph(
                     }
                 }
             )
-
         }
+
         composable("home_nav") {
             Box(modifier = Modifier.fillMaxSize()) {
-                HomeNavGraph(playerViewModel = playerViewModel,
-                    mainNavController = navController)
+                HomeNavGraph(
+                    playerViewModel = playerViewModel,
+                    mainNavController = navController
+                )
 
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 4.dp)
                 ) {
-
                 }
             }
-
-}
+        }
     }
 }
-

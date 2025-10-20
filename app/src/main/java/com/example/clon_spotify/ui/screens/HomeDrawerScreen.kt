@@ -72,10 +72,7 @@ fun HomeDrawerScreen(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet(modifier = Modifier.background(Color(0xFF0B0B0B))) {
-                DrawerHeader(
-                    displayName = displayName,
-                    photoUrl = currentUser?.photoUrl?.toString()
-                )
+                DrawerHeader(displayName = displayName, photoUrl = currentUser?.photoUrl?.toString())
 
                 Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray)
                 DrawerItem("Novedades") { /* acción */ }
@@ -85,18 +82,13 @@ fun HomeDrawerScreen(
                 Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray)
                 DrawerItem("Cerrar sesión", icon = Icons.Default.Logout) {
                     FirebaseAuth.getInstance().signOut()
-                    mainNavController.navigate("login") {  // ← Usar mainNavController aquí
-                        popUpTo(mainNavController.graph.startDestinationId) {
-                            inclusive = true
-                        }
+                    mainNavController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
                         launchSingleTop = true
                     }
                 }
 
-                // ✅ NUEVO ITEM AÑADIDO AQUÍ (DESPUÉS DE CERRAR SESIÓN)
-                DrawerItem("Mensajes") {
-                    navController.navigate("messages")
-                }
+                DrawerItem("Mensajes") { navController.navigate("messages") }
             }
         }
     ) {
@@ -119,29 +111,7 @@ fun HomeDrawerScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
                 )
             },
-            containerColor = Color(0xFF0B0B0B),
-            bottomBar = {
-                // 🔹 MiniPlayer arriba + espacio + barra inferior
-                Column {
-                    // MiniPlayer con elevación y fondo
-                    Surface(
-                        tonalElevation = 8.dp,
-                        shadowElevation = 12.dp,
-                        color = Color(0xFF181818)
-                    ) {
-                        MiniPlayer(playerViewModel = playerViewModel)
-                    }
-
-                    // Espaciado entre el MiniPlayer y la barra inferior
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Barra inferior que nunca se oculta
-                    HomeBottomBar(
-                        navController = navController,
-                        onCreateClick = { showCreateDialog = true }
-                    )
-                }
-            }
+            containerColor = Color(0xFF0B0B0B)
         ) { padding ->
             Box(
                 modifier = Modifier
@@ -155,14 +125,10 @@ fun HomeDrawerScreen(
                     playerViewModel = playerViewModel
                 )
             }
-
-            if (showCreateDialog) {
-                showCreateDialog = false
-                navController.navigate("create_playlist")
-            }
         }
     }
 }
+
 
 @Composable
 private fun DrawerHeader(displayName: String, photoUrl: String?) {
