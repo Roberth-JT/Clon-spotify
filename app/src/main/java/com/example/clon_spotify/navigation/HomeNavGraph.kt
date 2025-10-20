@@ -1,6 +1,7 @@
 package com.example.clon_spotify.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -8,12 +9,14 @@ import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.ui.screens.BibliotecaScreen
 import com.example.clon_spotify.ui.screens.CreatePlaylistDialog
 import com.example.clon_spotify.ui.screens.HomeDrawerScreen
+import com.example.clon_spotify.ui.screens.MessagesScreen
 import com.example.clon_spotify.ui.screens.PlaylistScreen
 import com.example.clon_spotify.ui.screens.SearchScreen
+import com.example.clon_spotify.ui.screens.SelectFriendsScreen
 import com.example.clon_spotify.ui.screens.TusMeGustaScreen
 
 @Composable
-fun HomeNavGraph(playerViewModel: PlayerViewModel) {
+fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavController) {
     val homeNavController = rememberNavController()
 
     NavHost(
@@ -23,6 +26,7 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel) {
         composable("home_drawer") {
             HomeDrawerScreen(
                 navController = homeNavController,
+                mainNavController = mainNavController,
                 playerViewModel = playerViewModel,
                 onOpenPlaylist = { id -> homeNavController.navigate("playlist/$id") }
             )
@@ -33,7 +37,8 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel) {
             HomeDrawerScreen(
                 navController = homeNavController,
                 playerViewModel = playerViewModel,
-                onOpenPlaylist = { id -> homeNavController.navigate("playlist/$id") }
+                onOpenPlaylist = { id -> homeNavController.navigate("playlist/$id") },
+                mainNavController = TODO()
             )
         }
 
@@ -63,6 +68,18 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel) {
                 onOpenPlaylist = { playlistId ->
                     homeNavController.navigate("playlist/$playlistId") // ← También cambiar aquí si es necesario
                 }
+            )
+        }
+        composable("messages") {
+            MessagesScreen(
+                navController = homeNavController,
+                onBackClick = { homeNavController.popBackStack() }
+            )
+        }
+        composable("select_friends") {
+            SelectFriendsScreen(
+                navController = homeNavController,
+                onBackClick = { homeNavController.popBackStack() }
             )
         }
     }

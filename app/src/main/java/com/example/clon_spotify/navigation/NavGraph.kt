@@ -11,7 +11,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.clon_spotify.player.MiniPlayer
 import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.ui.screens.LoginScreen
 import com.example.clon_spotify.ui.screens.RegistroScreen
@@ -64,7 +63,8 @@ fun NavGraph(
         }
         composable("home_nav") {
             Box(modifier = Modifier.fillMaxSize()) {
-                HomeNavGraph(playerViewModel = playerViewModel)
+                HomeNavGraph(playerViewModel = playerViewModel,
+                    mainNavController = navController)
 
                 Box(
                     modifier = Modifier
