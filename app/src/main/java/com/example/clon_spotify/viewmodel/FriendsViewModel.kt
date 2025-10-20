@@ -9,9 +9,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 data class User(
-    val uid: String,
-    val nombre: String,
-    val email: String
+    val uid: String="",
+    val nombre: String="",
+    val email: String="",
+    val imageUrl: String = ""
+
+
 )
 
 class FriendsViewModel : ViewModel() {
@@ -79,4 +82,49 @@ class FriendsViewModel : ViewModel() {
             }
         }
     }
+    /** 🔹 Función para seguir a otro usuario */
+    fun Seguidos(user: User, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val currentUserId = auth.currentUser?.uid ?: return onError("Usuario no autenticado")
+
+        val followRef = db.collection("usuarios")
+            .document(currentUserId)
+            .collection("seguidos")
+            .document(user.uid)
+
+        val followData = mapOf(
+            "uid" to user.uid,
+            "nombre" to user.nombre,
+            "email" to user.email
+        )
+
+        followRef.set(followData)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onError(e.message ?: "Error al seguir usuario") }
+    }
+
+    /** 🔹 Verificar si ya lo sigue (opcional) */
+    fun isSeguidos(userId: String, callback: (Boolean) -> Unit) {
+        val currentUserId = auth.currentUser?.uid ?: return callback(false)
+        db.collection("usuarios")
+            .document(currentUserId)
+            .collection("seguidos")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { snapshot -> callback(snapshot.exists()) }
+            .addOnFailureListener { callback(false) }
+    }
+    /** 🔹 Función para dejar de seguir a un usuario */
+    fun dejarDeSeguir(userId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val currentUserId = auth.currentUser?.uid ?: return onError("Usuario no autenticado")
+
+        val followRef = db.collection("usuarios")
+            .document(currentUserId)
+            .collection("seguidos")
+            .document(userId)
+
+        followRef.delete()
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e -> onError(e.message ?: "Error al dejar de seguir usuario") }
+    }
+
 }

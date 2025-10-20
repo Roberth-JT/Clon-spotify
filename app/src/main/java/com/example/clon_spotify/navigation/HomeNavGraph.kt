@@ -2,9 +2,11 @@ package com.example.clon_spotify.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.ui.screens.BibliotecaScreen
 import com.example.clon_spotify.ui.screens.CreatePlaylistDialog
@@ -14,6 +16,8 @@ import com.example.clon_spotify.ui.screens.PlaylistScreen
 import com.example.clon_spotify.ui.screens.SearchScreen
 import com.example.clon_spotify.ui.screens.SelectFriendsScreen
 import com.example.clon_spotify.ui.screens.TusMeGustaScreen
+import com.example.clon_spotify.ui.screens.PerfilUsuarioScreen
+
 
 @Composable
 fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavController) {
@@ -82,5 +86,17 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
                 onBackClick = { homeNavController.popBackStack() }
             )
         }
+        // ✅ RUTA CORRECTA Y UNIFICADA
+        composable(
+            route = "perfil/{userId}",
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            PerfilUsuarioScreen(
+                userId = userId,
+                navController = homeNavController
+            )
+        }
+
     }
 }
