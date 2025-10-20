@@ -1,44 +1,20 @@
 package com.example.clon_spotify.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import android.widget.Toast
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,12 +27,11 @@ import com.example.clon_spotify.viewmodel.User
 fun SelectFriendsScreen(
     navController: NavController,
     onBackClick: () -> Unit,
-    friendsViewModel: FriendsViewModel = viewModel()
+    friendsViewModel: FriendsViewModel = viewModel(),
 ) {
     val allUsers by friendsViewModel.allUsers.collectAsState()
     val selectedUsers by friendsViewModel.selectedUsers.collectAsState()
 
-    // Cargar usuarios cuando la pantalla se abre
     LaunchedEffect(Unit) {
         friendsViewModel.loadAllUsers()
     }
@@ -64,12 +39,13 @@ fun SelectFriendsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text("Seleccionar amigos", color = Color.White, fontWeight = FontWeight.SemiBold)
-                },
+                title = { Text("Seleccionar amigos", color = Color.White, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF121212))
@@ -100,13 +76,8 @@ fun SelectFriendsScreen(
                         Button(
                             onClick = {
                                 friendsViewModel.sendInvitations(
-                                    onSuccess = {
-                                        // Volver a la pantalla anterior después de enviar
-                                        onBackClick()
-                                    },
-                                    onError = { error ->
-                                        // Manejar error (podrías mostrar un snackbar)
-                                    }
+                                    onSuccess = { onBackClick() },
+                                    onError = { /* puedes mostrar Snackbar aquí */ }
                                 )
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1ED760))
@@ -139,8 +110,10 @@ fun SelectFriendsScreen(
                     items(allUsers) { user ->
                         UserItem(
                             user = user,
+                            friendsViewModel = friendsViewModel,
                             isSelected = selectedUsers.contains(user.uid),
-                            onToggleSelection = { friendsViewModel.toggleUserSelection(user.uid) }
+                            onToggleSelection = { friendsViewModel.toggleUserSelection(user.uid) },
+                            navController = navController
                         )
                     }
                 }
@@ -149,12 +122,23 @@ fun SelectFriendsScreen(
     }
 }
 
+
 @Composable
 fun UserItem(
     user: User,
+    friendsViewModel: FriendsViewModel,
     isSelected: Boolean,
-    onToggleSelection: () -> Unit
+    onToggleSelection: () -> Unit,
+    navController: NavController
 ) {
+    val context = LocalContext.current
+    var isSeguidos by remember { mutableStateOf(false) }
+
+    // Verificar si ya lo sigue
+    LaunchedEffect(user.uid) {
+        friendsViewModel.isSeguidos(user.uid) { isSeguidos = it }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -162,12 +146,10 @@ fun UserItem(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF181818)),
         onClick = onToggleSelection
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Avatar del usuario
@@ -201,20 +183,63 @@ fun UserItem(
                 }
             }
 
-            // Checkbox de selección
-            Surface(
-                shape = CircleShape,
-                color = if (isSelected) Color(0xFF1ED760) else Color.Transparent,
-                border = if (!isSelected) CardDefaults.outlinedCardBorder() else null
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 🔹 Botones de acción (ahora en columna)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    Icons.Default.Check,
-                    contentDescription = if (isSelected) "Seleccionado" else "No seleccionado",
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(4.dp),
-                    tint = if (isSelected) Color.Black else Color.Transparent
-                )
+                // Botón Seguir / Dejar de seguir
+                Button(
+                    onClick = {
+                        if (!isSeguidos) {
+                            friendsViewModel.Seguidos(
+                                user,
+                                onSuccess = {
+                                    isSeguidos = true
+                                    Toast.makeText(context, "Ahora sigues a ${user.nombre}", Toast.LENGTH_SHORT).show()
+                                },
+                                onError = { error ->
+                                    Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        } else {
+                            friendsViewModel.dejarDeSeguir(
+                                userId = user.uid,
+                                onSuccess = {
+                                    isSeguidos = false
+                                    Toast.makeText(context, "Dejaste de seguir a ${user.nombre}", Toast.LENGTH_SHORT).show()
+                                },
+                                onError = { error ->
+                                    Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isSeguidos) Color.Gray else Color(0xFF1ED760)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        if (isSeguidos) "Dejar de seguir" else "Seguir",
+                        color = if (isSeguidos) Color.White else Color.Black
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 🔹 Botón Ir al perfil completo
+                OutlinedButton(
+                    onClick = {
+                        Toast.makeText(context, "Viendo el perfil de ${user.nombre}", Toast.LENGTH_SHORT).show()
+                        navController.navigate("perfil/${user.uid}")
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Ir al perfil completo")
+                }
             }
         }
     }

@@ -4,19 +4,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.clon_spotify.player.MiniPlayer
 import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.ui.components.HomeBottomBar
@@ -96,8 +96,21 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
                     onBackClick = { homeNavController.popBackStack() }
                 )
             }
+
+            // ✅ RUTA PERFIL DE USUARIO (dentro del NavHost)
+            composable(
+                route = "perfil/{userId}",
+                arguments = listOf(navArgument("userId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                PerfilUsuarioScreen(
+                    userId = userId,
+                    navController = homeNavController
+                )
+            }
         }
 
+        // ✅ Mostrar diálogo de creación si se activa
         if (showCreateDialog) {
             showCreateDialog = false
             homeNavController.navigate("create_playlist")
