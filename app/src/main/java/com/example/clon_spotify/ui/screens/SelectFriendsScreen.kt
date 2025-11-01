@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -31,9 +31,22 @@ fun SelectFriendsScreen(
 ) {
     val allUsers by friendsViewModel.allUsers.collectAsState()
     val selectedUsers by friendsViewModel.selectedUsers.collectAsState()
+    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
     LaunchedEffect(Unit) {
         friendsViewModel.loadAllUsers()
+    }
+
+    // 🔹 Filtrado de usuarios local (por nombre o email)
+    val filteredUsers = remember(searchQuery.text, allUsers) {
+        if (searchQuery.text.isBlank()) {
+            emptyList() // No mostrar nada si no hay búsqueda
+        } else {
+            allUsers.filter { user ->
+                user.nombre.contains(searchQuery.text, ignoreCase = true) ||
+                        user.email.contains(searchQuery.text, ignoreCase = true)
+            }
+        }
     }
 
     Scaffold(
@@ -77,7 +90,7 @@ fun SelectFriendsScreen(
                             onClick = {
                                 friendsViewModel.sendInvitations(
                                     onSuccess = { onBackClick() },
-                                    onError = { /* puedes mostrar Snackbar aquí */ }
+                                    onError = { /* mostrar Snackbar si quieres */ }
                                 )
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1ED760))
@@ -95,19 +108,49 @@ fun SelectFriendsScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
-            if (allUsers.isEmpty()) {
+            // 🔹 Barra de búsqueda
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("¿A quién quieres buscar hoy?", color = Color.Gray) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF1ED760),
+                    unfocusedBorderColor = Color.Gray,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White
+                )
+            )
+
+            if (searchQuery.text.isBlank()) {
+                // Si no hay búsqueda activa, mostrar un mensaje tipo Spotify
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No hay usuarios disponibles", color = Color.Gray)
+                    Text(
+                        "Escribe el nombre o correo del usuario que deseas buscar",
+                        color = Color.Gray
+                    )
+                }
+            } else if (filteredUsers.isEmpty()) {
+                // Si no hay coincidencias
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No se encontraron resultados", color = Color.Gray)
                 }
             } else {
+                // Mostrar resultados filtrados
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp)
                 ) {
-                    items(allUsers) { user ->
+                    items(filteredUsers) { user ->
                         UserItem(
                             user = user,
                             friendsViewModel = friendsViewModel,
@@ -122,7 +165,6 @@ fun SelectFriendsScreen(
     }
 }
 
-
 @Composable
 fun UserItem(
     user: User,
@@ -134,7 +176,6 @@ fun UserItem(
     val context = LocalContext.current
     var isSeguidos by remember { mutableStateOf(false) }
 
-    // Verificar si ya lo sigue
     LaunchedEffect(user.uid) {
         friendsViewModel.isSeguidos(user.uid) { isSeguidos = it }
     }
@@ -152,7 +193,6 @@ fun UserItem(
                 .padding(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Avatar del usuario
                 Surface(
                     shape = CircleShape,
                     color = Color(0xFF535353)
@@ -185,12 +225,10 @@ fun UserItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 🔹 Botones de acción (ahora en columna)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Botón Seguir / Dejar de seguir
                 Button(
                     onClick = {
                         if (!isSeguidos) {
@@ -230,7 +268,6 @@ fun UserItem(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 🔹 Botón Ir al perfil completo
                 OutlinedButton(
                     onClick = {
                         Toast.makeText(context, "Viendo el perfil de ${user.nombre}", Toast.LENGTH_SHORT).show()

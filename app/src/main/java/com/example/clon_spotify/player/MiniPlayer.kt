@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -32,12 +33,31 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
 
     // Mostrar solo si hay canción
     if (currentSong != null) {
-        val duration = playerViewModel.getDuration().coerceAtLeast(1L) // evitar división por 0
+        val duration = playerViewModel.getDuration().coerceAtLeast(1L)
 
-        Column(modifier = Modifier.fillMaxWidth().background(Color(0xFF121212)).navigationBarsPadding()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                // Fondo translúcido + degradado para un efecto tipo Spotify
+                .background(Color(0xCC121212)) // negro con 80% opacidad
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,     // parte superior más suave
+                            Color(0xFF121212)      // parte inferior más oscura
+                        )
+                    )
+                )
+                .navigationBarsPadding()
+                .padding(vertical = 2.dp)
+        ) {
 
-            // Slider + Tiempos
-            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+            // Barra de progreso
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+            ) {
                 Slider(
                     value = playbackPosition.value.toFloat(),
                     onValueChange = { newValue ->
@@ -50,9 +70,11 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
                     colors = SliderDefaults.colors(
                         thumbColor = Color(0xFF1DB954),
                         activeTrackColor = Color(0xFF1DB954),
-                        inactiveTrackColor = Color.Gray
-                    )
+                        inactiveTrackColor = Color.DarkGray
+                    ),
+                    modifier = Modifier.height(24.dp)
                 )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -74,29 +96,45 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 6.dp)
+                ) {
                     Text(
                         text = currentSong?.title ?: "",
                         color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1
                     )
                     Text(
                         text = currentSong?.artist ?: "",
                         color = Color.Gray,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
                     )
                 }
 
-                Row {
-                    IconButton(onClick = { playerViewModel.playPrevious(context) }) {
-                        Icon(Icons.Default.SkipPrevious, contentDescription = "Anterior", tint = Color.White)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { playerViewModel.playPrevious(context) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.SkipPrevious,
+                            contentDescription = "Anterior",
+                            tint = Color.White
+                        )
                     }
 
-                    IconButton(onClick = { playerViewModel.togglePlayPause() }) {
+                    IconButton(
+                        onClick = { playerViewModel.togglePlayPause() },
+                        modifier = Modifier.size(36.dp)
+                    ) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = "Play/Pause",
@@ -109,7 +147,8 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
                             if (!isFavorite) {
                                 playerViewModel.addCurrentSongToFavorites(context)
                             }
-                        }
+                        },
+                        modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
                             imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.Add,
@@ -118,8 +157,15 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
                         )
                     }
 
-                    IconButton(onClick = { playerViewModel.playNext(context) }) {
-                        Icon(Icons.Default.SkipNext, contentDescription = "Siguiente", tint = Color.White)
+                    IconButton(
+                        onClick = { playerViewModel.playNext(context) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.SkipNext,
+                            contentDescription = "Siguiente",
+                            tint = Color.White
+                        )
                     }
                 }
             }
