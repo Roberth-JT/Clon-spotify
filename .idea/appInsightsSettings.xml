@@ -9,9 +9,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.example.clon_spotify" />
-                  <option name="mobileSdkAppId" value="1:1094483716005:android:19e7076d8858d976402a4c" />
-                  <option name="projectId" value="spotify-55a90" />
-                  <option name="projectNumber" value="1094483716005" />
+                  <option name="mobileSdkAppId" value="1:470608401948:android:7d4d89bb7219dd4deeb1d9" />
+                  <option name="projectId" value="clon-spotify-59f7d" />
+                  <option name="projectNumber" value="470608401948" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

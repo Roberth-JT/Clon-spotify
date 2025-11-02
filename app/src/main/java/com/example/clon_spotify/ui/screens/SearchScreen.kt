@@ -3,14 +3,34 @@ package com.example.clon_spotify.ui.screens
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,7 +54,7 @@ fun SearchScreen(playerViewModel: PlayerViewModel) {
     var selectedSong by remember { mutableStateOf<SongUi?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    //  Cargar canciones demo a Firestore si no existen
+    // Cargar canciones demo a Firestore si no existen
     LaunchedEffect(Unit) {
         val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
         if (userId != null) {
@@ -58,8 +78,8 @@ fun SearchScreen(playerViewModel: PlayerViewModel) {
 
                 filteredSongs = songs
 
-                playerViewModel.trackList.clear()
-                playerViewModel.trackList.addAll(songs)
+                // 🔥 CORRECCIÓN: Usar setPlaylist en lugar de acceder directamente a trackList
+                playerViewModel.setPlaylist(songs)
 
             } catch (e: Exception) {
                 Toast.makeText(context, "Error cargando canciones: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -72,8 +92,6 @@ fun SearchScreen(playerViewModel: PlayerViewModel) {
             Toast.makeText(context, "Debes iniciar sesión", Toast.LENGTH_SHORT).show()
         }
     }
-
-
 
     Column(
         modifier = Modifier
@@ -127,7 +145,10 @@ fun SearchScreen(playerViewModel: PlayerViewModel) {
                     items(filteredSongs) { song ->
                         SongItem(song = song,
                             onAddToPlaylist = { selectedSong = song },
-                            onPlayClick = { playerViewModel.playSong(song, context)
+                            onPlayClick = {
+                                // 🔥 CORRECCIÓN: Usar playSongInPlaylist en lugar de playSong
+                                playerViewModel.playSongInPlaylist(song, songs, context)
+                                Toast.makeText(context, "Reproduciendo: ${song.title}", Toast.LENGTH_SHORT).show()
                             } )
                     }
                 }
@@ -144,7 +165,7 @@ fun SearchScreen(playerViewModel: PlayerViewModel) {
 }
 
 @Composable
-fun SongItem(song: SongUi, onAddToPlaylist: () -> Unit,    onPlayClick: () -> Unit) {
+fun SongItem(song: SongUi, onAddToPlaylist: () -> Unit, onPlayClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -168,6 +189,7 @@ fun SongItem(song: SongUi, onAddToPlaylist: () -> Unit,    onPlayClick: () -> Un
         }
     }
 }
+
 fun demoSongList(): List<SongUi> = listOf(
     SongUi(
         id = "s1",
