@@ -156,6 +156,53 @@ fun PlaylistScreen(
             )
 
             playlist!!.description?.let { Text(it, color = Color.LightGray) }
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+            val isOwnPlaylist = playlist!!.id.isNotEmpty() &&
+                    currentUserId != null &&
+                    firestore.collection("usuarios")
+                        .document(currentUserId)
+                        .collection("playlists")
+                        .document(playlist!!.id) != null
+
+            if (isOwnPlaylist) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (playlist!!.isPublic) "Pública 🌍" else "Privada 🔒",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Switch(
+                        checked = playlist!!.isPublic,
+                        onCheckedChange = { newValue ->
+                            firestore.collection("usuarios")
+                                .document(currentUserId!!)
+                                .collection("playlists")
+                                .document(playlist!!.id)
+                                .update("isPublic", newValue)
+                                .addOnSuccessListener {
+                                    playlist = playlist!!.copy(isPublic = newValue)
+                                    Toast.makeText(
+                                        context,
+                                        if (newValue) "Playlist marcada como Pública 🌍"
+                                        else "Playlist ahora es Privada 🔒",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color(0xFF1DB954),
+                            uncheckedThumbColor = Color.Gray
+                        )
+                    )
+                }
+            }
+
 
             Spacer(modifier = Modifier.height(8.dp))
             Text("Canciones", color = Color.White, fontWeight = FontWeight.SemiBold)
