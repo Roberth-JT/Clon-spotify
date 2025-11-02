@@ -23,7 +23,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.models.SongUi
-import com.example.clon_spotify.player.MiniPlayer
 import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.viewmodel.HomeViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -36,63 +35,58 @@ fun PlaylistScreen(
     playlistId: String?,
     playerViewModel: PlayerViewModel
 ) {
-
     val firestore = FirebaseFirestore.getInstance()
     val viewModel: HomeViewModel = viewModel()
     val context = LocalContext.current
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
 
     var playlist by remember { mutableStateOf<PlaylistUi?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedSong by remember { mutableStateOf<SongUi?>(null) }
 
-    // 🔹 Cargar la playlist desde Firestore
+    // 🔹 Cargar playlist desde Firestore
     LaunchedEffect(playlistId) {
-        if (playlistId == null) return@LaunchedEffect
+        if (playlistId == null || userId == null) return@LaunchedEffect
 
         val collections = listOf("playlists", "mixes", "recomendados", "albumes")
 
         if (playlistId == "tus_me_gusta") {
-            val userId = FirebaseAuth.getInstance().currentUser?.uid
-            if (userId != null) {
-                val snapshot = firestore.collection("usuarios")
+            val snapshot = firestore.collection("usuarios")
+                .document(userId)
+                .collection("me_gusta")
+                .get()
+                .await()
+
+            playlist = PlaylistUi(
+                id = "tus_me_gusta",
+                title = "Tus me gusta",
+                description = "Canciones que marcaste con ❤️",
+                imageUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
+                songs = snapshot.toObjects(SongUi::class.java)
+            )
+        } else {
+            for (col in collections) {
+                val doc = firestore.collection("usuarios")
                     .document(userId)
-                    .collection("me_gusta")
+                    .collection(col)
+                    .document(playlistId)
                     .get()
                     .await()
 
-                val likedSongs = snapshot.toObjects(SongUi::class.java)
-                playlist = PlaylistUi(
-                    id = "tus_me_gusta",
-                    title = "Tus me gusta",
-                    description = "Canciones que marcaste con ❤️",
-                    imageUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
-                    songs = likedSongs
-                )
-            }
-
-        } else {
-            for (col in collections) {
-                val usuariosId = FirebaseAuth.getInstance().currentUser?.uid
-                if (usuariosId != null) {
-                    val doc = firestore.collection("usuarios")
-                        .document(usuariosId)
-                        .collection(col)
-                        .document(playlistId)
-                        .get()
-                        .await()
-
-                    if (doc.exists()) {
-                        playlist = doc.toObject(PlaylistUi::class.java)
-                        break // salimos del for si la encontramos
-                    }
+                if (doc.exists()) {
+                    val loaded = doc.toObject(PlaylistUi::class.java)
+                    // 🔹 Aseguramos usar solo el campo correcto (isPublic)
+                    playlist = loaded?.copy(
+                        isPublic = loaded.isPublic || doc.getBoolean("public") == true
+                    )
+                    break
                 }
             }
-
         }
     }
 
-    // Pantalla de carga
     if (playlist == null) {
+        // Pantalla de carga
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -104,7 +98,7 @@ fun PlaylistScreen(
         return
     }
 
-    // BottomSheet de opciones
+    // 🔹 BottomSheet de opciones
     if (showBottomSheet && selectedSong != null) {
         SongOptionsBottomSheet(
             song = selectedSong!!,
@@ -118,7 +112,7 @@ fun PlaylistScreen(
         )
     }
 
-    // 🎧 UI principal
+    // 🎧 Interfaz principal
     Scaffold(
         topBar = {
             TopAppBar(
@@ -127,13 +121,13 @@ fun PlaylistScreen(
             )
         },
         containerColor = Color(0xFF0B0B0B),
-
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
         ) {
+            // Imagen principal
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(playlist!!.imageUrl)
@@ -148,24 +142,21 @@ fun PlaylistScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Título y descripción
             Text(
                 playlist!!.title,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.headlineSmall
             )
+            playlist!!.description?.let {
+                Text(it, color = Color.LightGray, fontSize = 14.sp)
+            }
 
-            playlist!!.description?.let { Text(it, color = Color.LightGray) }
-            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-            val isOwnPlaylist = playlist!!.id.isNotEmpty() &&
-                    currentUserId != null &&
-                    firestore.collection("usuarios")
-                        .document(currentUserId)
-                        .collection("playlists")
-                        .document(playlist!!.id) != null
-
-            if (isOwnPlaylist) {
+            // 🔹 Switch Pública / Privada (solo para el dueño)
+            if (userId != null && playlistId != "tus_me_gusta") {
                 Spacer(modifier = Modifier.height(12.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -180,20 +171,28 @@ fun PlaylistScreen(
                     Switch(
                         checked = playlist!!.isPublic,
                         onCheckedChange = { newValue ->
-                            firestore.collection("usuarios")
-                                .document(currentUserId!!)
+                            val ref = firestore.collection("usuarios")
+                                .document(userId)
                                 .collection("playlists")
                                 .document(playlist!!.id)
-                                .update("isPublic", newValue)
-                                .addOnSuccessListener {
-                                    playlist = playlist!!.copy(isPublic = newValue)
-                                    Toast.makeText(
-                                        context,
-                                        if (newValue) "Playlist marcada como Pública 🌍"
-                                        else "Playlist ahora es Privada 🔒",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+
+                            // 🔹 Actualizamos ambos campos para evitar conflictos
+                            ref.update(
+                                mapOf(
+                                    "isPublic" to newValue,
+                                    "public" to newValue
+                                )
+                            ).addOnSuccessListener {
+                                playlist = playlist!!.copy(isPublic = newValue)
+                                Toast.makeText(
+                                    context,
+                                    if (newValue) "Playlist marcada como Pública 🌍"
+                                    else "Playlist ahora es Privada 🔒",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }.addOnFailureListener {
+                                Toast.makeText(context, "Error al actualizar estado", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color(0xFF1DB954),
@@ -203,11 +202,11 @@ fun PlaylistScreen(
                 }
             }
 
-
             Spacer(modifier = Modifier.height(8.dp))
             Text("Canciones", color = Color.White, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
 
+            // 🔹 Lista de canciones
             LazyColumn {
                 items(playlist!!.songs.size) { idx ->
                     val song = playlist!!.songs[idx]
@@ -241,7 +240,7 @@ fun PlaylistScreen(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(song.title, color = Color.White)
-                            Text(song.artist, color = Color.LightGray)
+                            Text(song.artist, color = Color.LightGray, fontSize = 13.sp)
                         }
 
                         IconButton(onClick = {
@@ -276,7 +275,6 @@ fun SongOptionsBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF181818),
-        dragHandle = { Box(modifier = Modifier.height(10.dp)) },
         tonalElevation = 0.dp
     ) {
         Column(
@@ -285,7 +283,11 @@ fun SongOptionsBottomSheet(
                 .background(Color(0xFF181818))
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
+            // Info de la canción
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 8.dp)
+            ) {
                 AsyncImage(
                     model = song.imageUrl,
                     contentDescription = song.title,
@@ -303,7 +305,7 @@ fun SongOptionsBottomSheet(
             Divider(color = Color.DarkGray, thickness = 0.7.dp)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ❤️ Agregar a Me gusta
+            // ❤️ Agregar a me gusta
             OptionItem(
                 iconUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
                 label = if (isSaving) "Guardando..." else "Agregar a Tus me gusta",
@@ -324,64 +326,42 @@ fun SongOptionsBottomSheet(
                                 songRef.set(song)
                                     .addOnSuccessListener {
                                         Toast.makeText(context, "Agregado a Tus me gusta 💜", Toast.LENGTH_SHORT).show()
-                                        isSaving = false
                                     }
                                     .addOnFailureListener {
                                         Toast.makeText(context, "Error al agregar 😢", Toast.LENGTH_SHORT).show()
-                                        isSaving = false
                                     }
+                                    .addOnCompleteListener { isSaving = false }
                             }
                         }
                     }
                 }
             )
 
-            // 📤 Compartir
             OptionItem("https://cdn-icons-png.flaticon.com/512/786/786205.png", "Compartir")
-
-            // ➕ Agregar a otra playlist
             OptionItem("https://cdn-icons-png.flaticon.com/512/1828/1828817.png", "Agregar a otra playlist")
 
-            // ❌ Eliminar (soporta playlists o tus me gusta)
+            // ❌ Eliminar canción
             OptionItem(
                 iconUrl = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png",
                 label = "Eliminar de esta playlist",
                 onClick = {
-                    if (playlist.id == "tus_me_gusta") {
-                        // Eliminar de me gusta
-                        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@OptionItem
-                        firestore.collection("usuarios")
-                            .document(userId)
-                            .collection("me_gusta")
-                            .document(song.id)
-                            .delete()
-                            .addOnSuccessListener {
-                                Toast.makeText(context, "Eliminado de Tus me gusta 💔", Toast.LENGTH_SHORT).show()
-                                onSongDeleted(song)
-                                onDismiss()
-                            }
-                            .addOnFailureListener {
-                                Toast.makeText(context, "Error al eliminar", Toast.LENGTH_SHORT).show()
-                            }
-                    } else {
-                        // Eliminar de playlist normal
-                        val usuariosId = FirebaseAuth.getInstance().currentUser?.uid
+                    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@OptionItem
+                    val ref = firestore.collection("usuarios")
+                        .document(userId)
+                        .collection("playlists")
+                        .document(playlist.id)
 
-                        firestore.collection("usuarios")
-                            .document(usuariosId ?: "")
-                            .collection("playlists")
-                            .document(playlist.id)
-                            .update("songs", playlist.songs.filter { it.id != song.id })
+                    val nuevaLista = playlist.songs.filter { it.id != song.id }
 
-                            .addOnSuccessListener {
-                                Toast.makeText(context, "Canción eliminada ❌", Toast.LENGTH_SHORT).show()
-                                onSongDeleted(song)
-                                onDismiss()
-                            }
-                            .addOnFailureListener {
-                                Toast.makeText(context, "Error al eliminar", Toast.LENGTH_SHORT).show()
-                            }
-                    }
+                    ref.update("songs", nuevaLista)
+                        .addOnSuccessListener {
+                            Toast.makeText(context, "Canción eliminada ❌", Toast.LENGTH_SHORT).show()
+                            onSongDeleted(song)
+                            onDismiss()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(context, "Error al eliminar", Toast.LENGTH_SHORT).show()
+                        }
                 }
             )
 
