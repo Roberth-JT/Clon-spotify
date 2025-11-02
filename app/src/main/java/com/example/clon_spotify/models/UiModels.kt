@@ -14,5 +14,7 @@ data class PlaylistUi(
     val title: String = "",
     val description: String? = null,
     val imageUrl: String = "",
-    val songs: List<SongUi> = emptyList()
+    val songs: List<SongUi> = emptyList(),
+    val isPublic: Boolean = false // 👈 Nuevo campo
+
 )
