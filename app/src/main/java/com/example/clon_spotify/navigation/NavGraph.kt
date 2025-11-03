@@ -1,6 +1,8 @@
 package com.example.clon_spotify.navigation
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -11,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.ui.screens.LoginScreen
+import com.example.clon_spotify.ui.screens.PublicPlaylistScreen
 import com.example.clon_spotify.ui.screens.RegistroScreen
 import com.example.clon_spotify.viewmodel.AuthViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -77,6 +80,33 @@ fun NavGraph(
                 ) {
                 }
             }
+        }
+        composable("home_nav") {
+            Box(modifier = Modifier.fillMaxSize()) {
+                HomeNavGraph(
+                    playerViewModel = playerViewModel,
+                    mainNavController = navController
+                )
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 4.dp)
+                ) {
+                    // MiniPlayer aquí si lo necesitas
+                }
+            }
+        }
+        composable("playlist_public/{playlistId}") { backStackEntry ->
+            val playlistId = backStackEntry.arguments?.getString("playlistId") ?: ""
+            val ownerId = backStackEntry.arguments?.getString("ownerId") ?: ""
+
+            PublicPlaylistScreen(
+                playlistId = playlistId,
+                ownerId = ownerId,
+                navController = navController,
+                playerViewModel = playerViewModel
+            )
         }
     }
 }

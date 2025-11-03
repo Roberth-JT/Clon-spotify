@@ -18,3 +18,9 @@ data class PlaylistUi(
     val isPublic: Boolean = false // 👈 Nuevo campo
 
 )
+data class User(
+    val uid: String = "",
+    val nombre: String = "",
+    val email: String = "",
+    val imageUrl: String = ""
+)
