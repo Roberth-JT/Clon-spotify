@@ -9,9 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,10 +27,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
-/**
- * HomeContent: ahora la tarjeta NAVIGATES (onOpenPlaylist) en lugar de reproducir al clickear la card.
- * La reproducción pasa a PlaylistScreen donde aparece la lista y se puede reproducir cada canción.
- */
 @Composable
 fun HomeContent(
     modifier: Modifier = Modifier,

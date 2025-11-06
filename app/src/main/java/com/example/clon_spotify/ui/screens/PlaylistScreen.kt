@@ -162,9 +162,9 @@ fun PlaylistScreen(
                     .build(),
                 contentDescription = playlist!!.title,
                 modifier = Modifier
-                    .height(220.dp)
+                    .height(180.dp)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(10.dp))
             )
 
             Spacer(modifier = Modifier.height(12.dp))

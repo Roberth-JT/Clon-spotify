@@ -85,35 +85,11 @@ fun LoginScreen(
                         }
                     }
                 )
-                SocialLoginButton(
-                    iconRes = R.drawable.facebook_logo,
-                    text = "Iniciar sesión con Facebook",
-                    onClick = { /* TODO */ }
-                )
-                SocialLoginButton(
-                    iconRes = R.drawable.apple_logo,
-                    text = "Iniciar sesión con Apple",
-                    onClick = { /* TODO */ }
-                )
-                SocialLoginButton(
-                    iconRes = null,
-                    text = "Iniciar sesión con número de teléfono",
-                    onClick = { navController.navigate("phone_login") }
-                )
             }
 
             Spacer(modifier = Modifier.height(40.dp))
 
             // Email / password fields
-            Text(
-                text = "Correo electrónico o nombre de usuario",
-                color = Color.White,
-                fontSize = 14.sp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 1.dp)
-            )
-
             OutlinedTextField(
                 value = email,
                 onValueChange = {

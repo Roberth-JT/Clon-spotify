@@ -25,7 +25,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -45,9 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.clon_spotify.player.MiniPlayer
 import com.example.clon_spotify.player.PlayerViewModel
-import com.example.clon_spotify.ui.components.HomeBottomBar
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
@@ -66,7 +63,7 @@ fun HomeDrawerScreen(
     val currentUser = FirebaseAuth.getInstance().currentUser
     val displayName = currentUser?.displayName ?: currentUser?.email ?: "Usuario"
 
-    var showCreateDialog by remember { mutableStateOf(false) }
+//    var showCreateDialog by remember { mutableStateOf(false) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -74,12 +71,12 @@ fun HomeDrawerScreen(
             ModalDrawerSheet(modifier = Modifier.background(Color(0xFF0B0B0B))) {
                 DrawerHeader(displayName = displayName, photoUrl = currentUser?.photoUrl?.toString())
 
-                Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray)
+                Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray)
                 DrawerItem("Novedades") { /* acción */ }
                 DrawerItem("Contenido reciente") { /* acción */ }
                 DrawerItem("Configuración y privacidad") { /* acción */ }
 
-                Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Gray)
+                Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray)
                 DrawerItem("Cerrar sesión", icon = Icons.Default.Logout) {
                     FirebaseAuth.getInstance().signOut()
                     mainNavController.navigate("login") {
@@ -132,7 +129,7 @@ fun HomeDrawerScreen(
 
 @Composable
 private fun DrawerHeader(displayName: String, photoUrl: String?) {
-    Column(modifier = Modifier.padding(16.dp)) {
+    Column(modifier = Modifier.padding(10.dp)) {
         Box(
             modifier = Modifier
                 .size(72.dp)
@@ -148,7 +145,7 @@ private fun DrawerHeader(displayName: String, photoUrl: String?) {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         Text(text = displayName, color = Color.White, fontWeight = FontWeight.Bold)
     }
 }

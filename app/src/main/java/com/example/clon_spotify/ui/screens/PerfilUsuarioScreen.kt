@@ -89,7 +89,6 @@ fun PerfilUsuarioScreen(
                 }
         }
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
