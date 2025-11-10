@@ -25,14 +25,14 @@ fun NavGraph(
 ) {
     val playerViewModel: PlayerViewModel = viewModel()
 
-    // 🔹 Detecta si ya hay usuario logueado en Firebase
+    //Detecta si ya hay usuario logueado en Firebase
     val currentUser = FirebaseAuth.getInstance().currentUser
 
     val startDestination = if (currentUser != null) "home_nav" else "login"
 
     NavHost(
         navController = navController,
-        startDestination = startDestination // ✅ AHORA SE USA ESTA VARIABLE
+        startDestination = startDestination
     ) {
         composable("login") {
             LoginScreen(
@@ -78,22 +78,6 @@ fun NavGraph(
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 4.dp)
                 ) {
-                }
-            }
-        }
-        composable("home_nav") {
-            Box(modifier = Modifier.fillMaxSize()) {
-                HomeNavGraph(
-                    playerViewModel = playerViewModel,
-                    mainNavController = navController
-                )
-
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 4.dp)
-                ) {
-                    // MiniPlayer aquí si lo necesitas
                 }
             }
         }

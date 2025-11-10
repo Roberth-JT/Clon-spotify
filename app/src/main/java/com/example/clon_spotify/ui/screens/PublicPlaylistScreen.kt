@@ -64,7 +64,7 @@ fun PublicPlaylistScreen(
     var playlist by remember { mutableStateOf<PlaylistUi?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // 🔹 Cargar playlist pública desde el usuario dueño
+    //  Cargar playlist pública desde el usuario dueño
     LaunchedEffect(playlistId, ownerId) {
         try {
             val playlistDoc = firestore.collection("usuarios")

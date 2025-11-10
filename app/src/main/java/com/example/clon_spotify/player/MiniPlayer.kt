@@ -66,7 +66,7 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                // Fondo translúcido + degradado para un efecto tipo Spotify
+                // Fondo translúcido + degradado
                 .background(Color(0xCC121212)) // negro con 80% opacidad
                 .background(
                     brush = Brush.verticalGradient(
@@ -148,7 +148,7 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Botón de repetición con mejor feedback visual
+                    // Botón de repetición
                     IconButton(
                         onClick = { playerViewModel.toggleRepeatMode() },
                         modifier = Modifier.size(32.dp)

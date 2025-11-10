@@ -24,7 +24,7 @@ fun LoginScreen(
     viewModel: AuthViewModel,
     navController: NavController,
     onLoginSuccess: () -> Unit = {
-        //  Solo corregimos la ruta aquí
+        //  ruta
         navController.navigate("home_graph") {
             popUpTo("login") { inclusive = true }
         }
@@ -89,7 +89,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Email / password fields
+            // Email / password
             OutlinedTextField(
                 value = email,
                 onValueChange = {

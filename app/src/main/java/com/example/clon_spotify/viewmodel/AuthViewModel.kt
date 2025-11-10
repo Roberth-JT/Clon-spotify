@@ -79,17 +79,6 @@ class AuthViewModel : ViewModel() {
                 onResult(false, authMessage)
             }
     }
-    fun checkCurrentUser() {
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            userId = currentUser.uid
-            isValidAuth = true
-        } else {
-            isValidAuth = false
-        }
-    }
-
-
     fun loginWithGoogle(
         context: Context,
         onResult: (Boolean) -> Unit

@@ -28,7 +28,7 @@ fun RegistroScreen(
         }
     },
     onRegisterSuccess: () -> Unit = {
-        // ✅ Corrección de ruta al home
+        // Corrección de ruta al home
         navController.navigate("home_graph") {
             popUpTo("registro") { inclusive = true }
         }

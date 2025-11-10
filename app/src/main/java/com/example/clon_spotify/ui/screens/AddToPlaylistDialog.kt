@@ -93,7 +93,7 @@ fun AddToPlaylistDialog(
                         val playlistRef = firestore.collection("usuarios")
                             .document(usuariosId ?: "")
                             .collection("playlists")
-                            .document(playlist.id ?: "")
+                            .document(playlist.id ?:"")
 
 
                         playlistRef.get().addOnSuccessListener { doc ->

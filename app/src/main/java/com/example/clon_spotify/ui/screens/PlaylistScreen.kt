@@ -71,7 +71,7 @@ fun PlaylistScreen(
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedSong by remember { mutableStateOf<SongUi?>(null) }
 
-    // 🔹 Cargar playlist desde Firestore
+    //  Cargar playlist desde Firestore
     LaunchedEffect(playlistId) {
         if (playlistId == null || userId == null) return@LaunchedEffect
 
@@ -102,7 +102,7 @@ fun PlaylistScreen(
 
                 if (doc.exists()) {
                     val loaded = doc.toObject(PlaylistUi::class.java)
-                    // 🔹 Aseguramos usar solo el campo correcto (isPublic)
+                    // Aseguramos usar solo el campo correcto (isPublic)
                     playlist = loaded?.copy(
                         isPublic = loaded.isPublic || doc.getBoolean("public") == true
                     )
@@ -125,7 +125,7 @@ fun PlaylistScreen(
         return
     }
 
-    // 🔹 BottomSheet de opciones
+    // BottomSheet de opciones
     if (showBottomSheet && selectedSong != null) {
         SongOptionsBottomSheet(
             song = selectedSong!!,
@@ -180,7 +180,7 @@ fun PlaylistScreen(
                 Text(it, color = Color.LightGray, fontSize = 14.sp)
             }
 
-            // 🔹 Switch Pública / Privada (solo para el dueño)
+            // Switch Pública / Privada
             if (userId != null && playlistId != "tus_me_gusta") {
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -203,7 +203,7 @@ fun PlaylistScreen(
                                 .collection("playlists")
                                 .document(playlist!!.id)
 
-                            // 🔹 Actualizamos ambos campos para evitar conflictos
+                            // Actualizamos ambos campos para evitar conflictos
                             ref.update(
                                 mapOf(
                                     "isPublic" to newValue,
@@ -233,7 +233,7 @@ fun PlaylistScreen(
             Text("Canciones", color = Color.White, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 🔹 Lista de canciones
+            // Lista de canciones
             LazyColumn {
                 items(playlist!!.songs.size) { idx ->
                     val song = playlist!!.songs[idx]
@@ -243,7 +243,7 @@ fun PlaylistScreen(
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
                             .clickable {
-                                // 🔹 CAMBIO IMPORTANTE: Usar playSongInPlaylist en lugar de playSong
+                                //  Usar playSongInPlaylist en lugar de playSong
                                 playerViewModel.playSongInPlaylist(song, playlist!!.songs, context)
                                 Toast.makeText(
                                     context,

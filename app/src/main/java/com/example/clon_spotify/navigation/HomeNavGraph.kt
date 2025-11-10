@@ -37,13 +37,13 @@ import com.example.clon_spotify.ui.screens.SelectFriendsScreen
 @Composable
 fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavController) {
     val homeNavController = rememberNavController()
-    var showCreateDialog by remember { mutableStateOf(false) }
+    var showCreateDialog by remember { mutableStateOf(false) }//creacion de dialogo de playlist
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             Column {
-                // 🔹 MiniPlayer global (siempre visible)
+                // MiniPlayer global (siempre visible)
                 Surface(
                     tonalElevation = 8.dp,
                     shadowElevation = 12.dp,
@@ -54,7 +54,7 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 🔹 HomeBottomBar global
+                // HomeBottomBar global
                 HomeBottomBar(
                     navController = homeNavController,
                     onCreateClick = { showCreateDialog = true }
@@ -75,7 +75,7 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
                 )
             }
 
-            composable("search") {
+            composable("search") { //buscador
                 SearchScreen(playerViewModel = playerViewModel)
             }
 
@@ -109,7 +109,7 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
                 )
             }
 
-            // ✅ RUTA PERFIL DE USUARIO (dentro del NavHost)
+            //  RUTA PERFIL DE USUARIO (dentro del NavHost)
             composable(
                 route = "perfil/{userId}",
                 arguments = listOf(navArgument("userId") { type = NavType.StringType })
@@ -140,10 +140,11 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
             }
         }
 
-        // ✅ Mostrar diálogo de creación si se activa
+        // Mostrar diálogo de creación si se activa
         if (showCreateDialog) {
             showCreateDialog = false
             homeNavController.navigate("create_playlist")
+
         }
     }
 }

@@ -52,10 +52,11 @@ fun HomeContent(
             return@LaunchedEffect
         }
 
+        //crear por usuario
         val userDoc = firestore.collection("usuarios").document(userId)
 
         try {
-            // --- Crear subcolecciones iniciales solo si están vacías ---
+            // Crear subcolecciones iniciales solo si están vacías
             suspend fun ensureCollectionExists(
                 name: String,
                 sampleData: List<PlaylistUi>
@@ -74,7 +75,7 @@ fun HomeContent(
             ensureCollectionExists("mixes", sampleMixes())
             ensureCollectionExists("albumes", sampleAlbumes())
 
-            // --- Listeners en tiempo real ---
+            // Listeners en tiempo real
             userDoc.collection("playlists")
                 .addSnapshotListener { snapshot, _ ->
                     playlists = snapshot?.toObjects(PlaylistUi::class.java) ?: emptyList()
@@ -106,7 +107,6 @@ fun HomeContent(
             isLoading = false
         }
     }
-
 
     if (isLoading) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -159,7 +159,7 @@ fun HomeContent(
                 songs = likedSongs
             )
 
-            // Mostrar mini lista de me gusta (pulsar abre la playlist)
+            // Mostrar mini lista de me gusta
             WidePlaylistCard(
                 playlist = tusMeGusta,
                 onClick = { onOpenPlaylist(tusMeGusta.id) },
@@ -194,7 +194,7 @@ fun HomeContent(
     }
 }
 
-/* --- Reutilizables dentro del Home (sin reproducción automática) --- */
+/* Reutilizables dentro del Home (sin reproducción automática) */
 
 @Composable
 fun GridPlaylists(
