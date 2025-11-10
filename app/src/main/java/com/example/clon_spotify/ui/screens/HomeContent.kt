@@ -294,8 +294,8 @@ fun SectionCarousel(
                             .clip(RoundedCornerShape(12.dp))
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(p.title, color = Color.White, maxLines = 1, fontWeight = FontWeight.SemiBold)
-                    p.description?.let { Text(it, color = Color.LightGray, maxLines = 1) }
+                    Text(p.title, color = Color.White, maxLines = 2, fontWeight = FontWeight.SemiBold)
+                    p.description?.let { Text(it, color = Color.LightGray, maxLines = 2) }
                 }
             }
         }
@@ -364,10 +364,15 @@ fun sampleAlbumes(): List<PlaylistUi> {
         SongUi("s6", "Flowers", "Miley Cyrus", "https://i1.sndcdn.com/artworks-YOSTbh90ESawTlzu-s9fROg-t500x500.jpg", "https://raw.githubusercontent.com/Roberth-JT/clon-spotify-audios/main/Flowers.mp3"),
         SongUi("s20", "Wrecking Ball", "Miley Cyrus", "https://upload.wikimedia.org/wikipedia/en/0/06/Miley_Cyrus_-_Wrecking_Ball.jpg", "https://raw.githubusercontent.com/Roberth-JT/clon-spotify-audios/main/WreckingBall.mp3")
     )
+    val luisAlbum = listOf(
+        SongUi("s7", "La Incondicional", "Luis Miguel", "https://i.ytimg.com/vi/wOjzo02Tmck/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCjimJjGE7FfMmJDqlZzf7Sk6P0Rg", "https://raw.githubusercontent.com/Roberth-JT/clon-spotify-audios/main/LaIncondicional.mp3"
+        ),    )
 
     return listOf(
         PlaylistUi("a1", "Marco Antonio Solís", "Romance y nostalgia", "https://iscale.iheart.com/catalog/artist/39469", marcoAlbum),
         PlaylistUi("a2", "Jesse & Joy", "Amor y armonía", "https://i.scdn.co/image/ab67616d0000b2731f6379010c486d0658e644f5", jjAlbum),
-        PlaylistUi("a3", "Miley Cyrus", "Fuerza y libertad", "https://www.hollywoodreporter.com/wp-content/uploads/2025/10/GettyImages-1472464614-e1759444822734.jpg?w=2000&h=1126&crop=1&resize=1440%2C810", mileyAlbum)
+        PlaylistUi("a3", "Miley Cyrus", "Fuerza y libertad", "https://www.hollywoodreporter.com/wp-content/uploads/2025/10/GettyImages-1472464614-e1759444822734.jpg?w=2000&h=1126&crop=1&resize=1440%2C810", mileyAlbum) ,
+        PlaylistUi("a4", "Luis Miguel", "Ritmo, Romantica", "https://i.ytimg.com/vi/wOjzo02Tmck/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCjimJjGE7FfMmJDqlZzf7Sk6P0Rg", luisAlbum),
+
     )
 }

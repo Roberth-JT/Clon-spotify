@@ -141,13 +141,13 @@ fun PlaylistScreen(
 
     // 🎧 Interfaz principal
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(playlist!!.title, color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
-            )
-        },
-        containerColor = Color(0xFF0B0B0B),
+//        topBar = {
+//            TopAppBar(
+//                title = { Text(playlist!!.title, color = Color.White) },
+//                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
+//            )
+//        },
+        //containerColor = Color(0xFF0B0B0B),
     ) { padding ->
         Column(
             modifier = Modifier
@@ -162,7 +162,7 @@ fun PlaylistScreen(
                     .build(),
                 contentDescription = playlist!!.title,
                 modifier = Modifier
-                    .height(180.dp)
+                    .height(200.dp)
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(10.dp))
             )
