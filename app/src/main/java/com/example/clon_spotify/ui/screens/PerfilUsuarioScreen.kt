@@ -61,7 +61,7 @@ fun PerfilUsuarioScreen(
     val isOwnProfile = userId == currentUserId
     val firestore = FirebaseFirestore.getInstance()
 
-    // 🔹 Cargar perfil y playlists según el contexto
+    //  Cargar perfil y playlists según el contexto
     LaunchedEffect(userId) {
         viewModel.cargarPerfil(userId)
 
@@ -154,7 +154,7 @@ fun PerfilUsuarioScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // 🔥 CAMBIO: Mostrar playlists públicas incluso si no se sigue al usuario
+                //  CAMBIO: Mostrar playlists públicas incluso si no se sigue al usuario
                 Text(
                     text = if (isOwnProfile) "Tus playlists" else "Playlists públicas",
                     style = MaterialTheme.typography.titleMedium
@@ -176,7 +176,7 @@ fun PerfilUsuarioScreen(
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .clickable {
-                                        // 🔥 CAMBIO IMPORTANTE: Navegar a la pantalla de playlist con el userId del dueño
+                                        // CAMBIO IMPORTANTE: Navegar a la pantalla de playlist con el userId del dueño
                                         navController.navigate("playlist_public/${playlist.id}/$userId")
                                     },
                                 colors = CardDefaults.cardColors(

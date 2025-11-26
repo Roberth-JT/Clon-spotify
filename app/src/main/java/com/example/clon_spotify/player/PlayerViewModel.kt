@@ -46,6 +46,22 @@ class PlayerViewModel : ViewModel() {
     private val _currentPlaylist = MutableStateFlow<List<SongUi>>(emptyList())
     val currentPlaylist: StateFlow<List<SongUi>> = _currentPlaylist.asStateFlow()
 
+    private val _isMiniPlayerVisible = MutableStateFlow(true)
+    val isMiniPlayerVisible = _isMiniPlayerVisible.asStateFlow()
+
+    fun hideMiniPlayer() {
+        pause()                 // Detiene la música
+        exoPlayer?.stop()       // Resetea el reproductor
+        _isMiniPlayerVisible.value = false
+        _currentSong.value = null   // Limpia la canción actual
+    }
+
+
+    fun showMiniPlayer() {
+        _isMiniPlayerVisible.value = true
+    }
+
+
     private var currentIndex = -1
     private var currentPlaylistId: String? = null
 
@@ -106,7 +122,7 @@ class PlayerViewModel : ViewModel() {
                     removeListener(listener)
                     addListener(listener)
                 }
-
+                showMiniPlayer()
                 _currentSong.value = song
                 currentIndex = songIndex
                 _isPlaying.value = true

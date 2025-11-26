@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -28,7 +30,13 @@ fun NavGraph(
     //Detecta si ya hay usuario logueado en Firebase
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    val startDestination = if (currentUser != null) "home_nav" else "login"
+    val firebaseUserState = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser) }
+    val startDestination = if (firebaseUserState.value != null) "home_nav" else "login"
+
+    FirebaseAuth.getInstance().addAuthStateListener { auth ->
+        firebaseUserState.value = auth.currentUser
+    }
+
 
     NavHost(
         navController = navController,

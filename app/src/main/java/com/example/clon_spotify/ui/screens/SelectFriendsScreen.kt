@@ -37,7 +37,7 @@ fun SelectFriendsScreen(
         friendsViewModel.loadAllUsers()
     }
 
-    // 🔹 Filtrado de usuarios local (por nombre o email)
+    // Filtrado de usuarios local (por nombre o email)
     val filteredUsers = remember(searchQuery.text, allUsers) {
         if (searchQuery.text.isBlank()) {
             emptyList() // No mostrar nada si no hay búsqueda

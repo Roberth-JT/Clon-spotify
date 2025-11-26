@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,7 +30,6 @@ fun RegistroScreen(
         }
     },
     onRegisterSuccess: () -> Unit = {
-        // Corrección de ruta al home
         navController.navigate("home_graph") {
             popUpTo("registro") { inclusive = true }
         }
@@ -38,6 +39,10 @@ fun RegistroScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+
+    var showPassword by remember { mutableStateOf(false) }
+    var showPasswordConfirm by remember { mutableStateOf(false) }
+
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -50,30 +55,24 @@ fun RegistroScreen(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
             modifier = Modifier.fillMaxWidth()
         ) {
+
             Spacer(modifier = Modifier.height(80.dp))
 
-            // Logo Spotify
             Image(
                 painter = painterResource(id = R.drawable.spotify_logo),
-                contentDescription = "Logo Spotify",
-                modifier = Modifier
-                    .size(80.dp)
-                    .padding(bottom = 16.dp)
+                contentDescription = "Logo",
+                modifier = Modifier.size(80.dp)
             )
 
-            // Título
             Text(
                 text = "Regístrate para empezar a escuchar contenido",
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .padding(top = 40.dp, bottom = 32.dp)
-                    .fillMaxWidth()
+                modifier = Modifier.padding(top = 40.dp, bottom = 32.dp)
             )
 
             // Nombre
@@ -83,39 +82,19 @@ fun RegistroScreen(
                 label = { Text("Nombre completo") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Black,
-                    unfocusedContainerColor = Color.Black,
-                    focusedIndicatorColor = Color.White,
-                    unfocusedIndicatorColor = Color.Gray,
-                    cursorColor = Color.White,
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.Gray,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
+                colors = textFieldColors()
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Correo
+            // Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Correo electrónico") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Black,
-                    unfocusedContainerColor = Color.Black,
-                    focusedIndicatorColor = Color.White,
-                    unfocusedIndicatorColor = Color.Gray,
-                    cursorColor = Color.White,
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.Gray,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
+                colors = textFieldColors()
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -125,19 +104,15 @@ fun RegistroScreen(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Contraseña") },
-                singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Black,
-                    unfocusedContainerColor = Color.Black,
-                    focusedIndicatorColor = Color.White,
-                    unfocusedIndicatorColor = Color.Gray,
-                    cursorColor = Color.White,
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.Gray,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
+                singleLine = true,
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    TextButton(onClick = { showPassword = !showPassword }) {
+                        Text(if (showPassword) "Ocultar" else "Ver", color = Color.Green)
+                    }
+                },
+                colors = textFieldColors()
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -147,35 +122,31 @@ fun RegistroScreen(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 label = { Text("Confirmar contraseña") },
-                singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Black,
-                    unfocusedContainerColor = Color.Black,
-                    focusedIndicatorColor = Color.White,
-                    unfocusedIndicatorColor = Color.Gray,
-                    cursorColor = Color.White,
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.Gray,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
+                singleLine = true,
+                visualTransformation = if (showPasswordConfirm) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    TextButton(onClick = { showPasswordConfirm = !showPasswordConfirm }) {
+                        Text(if (showPasswordConfirm) "Ocultar" else "Ver", color = Color.Green)
+                    }
+                },
+                colors = textFieldColors()
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Botón continuar
             Button(
                 onClick = {
-                    if (password == confirmPassword && email.isNotEmpty() && password.length >= 6 && nombre.isNotEmpty()) {
+                    if (password == confirmPassword &&
+                        email.isNotEmpty() &&
+                        password.length >= 6 &&
+                        nombre.isNotEmpty()
+                    ) {
                         isLoading = true
                         viewModel.register(email, password, nombre) { success, error ->
                             isLoading = false
-                            if (success) {
-                                onRegisterSuccess()
-                            } else {
-                                errorMessage = error
-                            }
+                            if (success) onRegisterSuccess()
+                            else errorMessage = error
                         }
                     } else {
                         errorMessage = "Completa todos los campos y revisa la contraseña"
@@ -190,29 +161,33 @@ fun RegistroScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Mostrar errores
             errorMessage?.let {
-                Text(it, color = Color.Red, fontSize = 14.sp)
+                Text(it, color = Color.Red)
             }
 
             if (isLoading) {
-                CircularProgressIndicator(color = Color.Green, modifier = Modifier.padding(top = 8.dp))
+                CircularProgressIndicator(color = Color.Green)
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Texto inferior
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "¿Ya tienes una cuenta?",
-                    color = Color.DarkGray,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(bottom = 2.dp)
-                )
-                TextButton(onClick = { onBackToLoginClick() }) {
-                    Text("Iniciar sesión", color = Color.White, fontWeight = FontWeight.Bold)
-                }
+            Text("¿Ya tienes cuenta?", color = Color.Gray)
+            TextButton(onClick = onBackToLoginClick) {
+                Text("Iniciar sesión", color = Color.White)
             }
         }
     }
 }
+
+@Composable
+fun textFieldColors() = TextFieldDefaults.colors(
+    focusedContainerColor = Color.Black,
+    unfocusedContainerColor = Color.Black,
+    focusedIndicatorColor = Color.White,
+    unfocusedIndicatorColor = Color.Gray,
+    cursorColor = Color.White,
+    focusedLabelColor = Color.White,
+    unfocusedLabelColor = Color.Gray,
+    focusedTextColor = Color.White,
+    unfocusedTextColor = Color.White
+)

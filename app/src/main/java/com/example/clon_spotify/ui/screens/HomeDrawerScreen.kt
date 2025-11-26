@@ -66,12 +66,6 @@ fun HomeDrawerScreen(
         drawerContent = {
             ModalDrawerSheet(modifier = Modifier.background(Color(0xFF0B0B0B))) {
                 DrawerHeader(displayName = displayName, photoUrl = currentUser?.photoUrl?.toString())
-
-                Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray)
-                DrawerItem("Novedades") { /* acción */ }
-                DrawerItem("Contenido reciente") { /* acción */ }
-                DrawerItem("Configuración y privacidad") { /* acción */ }
-
                 Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color.Gray)
                 DrawerItem("Cerrar sesión", icon = Icons.Default.Logout) {
                     FirebaseAuth.getInstance().signOut()

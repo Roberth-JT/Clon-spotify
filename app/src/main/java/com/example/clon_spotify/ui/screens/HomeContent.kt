@@ -27,6 +27,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
+
 @Composable
 fun HomeContent(
     modifier: Modifier = Modifier,
@@ -35,13 +36,14 @@ fun HomeContent(
     onOpenPlaylist: (String) -> Unit // este callback lo llamas para navegar a la pantalla de la playlist
 ) {
     val context = LocalContext.current
-    val firestore = FirebaseFirestore.getInstance()
+    //val firestore = FirebaseFirestore.getInstance()
     var playlists by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var mixes by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var recomendados by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var albumes by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var likedSongs by remember { mutableStateOf<List<SongUi>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+
 
     LaunchedEffect(Unit) {
         val firestore = FirebaseFirestore.getInstance()
@@ -121,7 +123,7 @@ fun HomeContent(
             .padding(horizontal = 12.dp)
     ) {
         item {
-            val chips = listOf("Todas", "Música", "Podcasts")
+            val chips = listOf("Todas", "Música")
             var selectedChip by remember { mutableStateOf("Todas") }
 
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

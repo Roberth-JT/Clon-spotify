@@ -43,6 +43,7 @@ import com.example.clon_spotify.player.PlayerViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(playerViewModel: PlayerViewModel) {
@@ -78,7 +79,7 @@ fun SearchScreen(playerViewModel: PlayerViewModel) {
 
                 filteredSongs = songs
 
-                // 🔥 CORRECCIÓN: Usar setPlaylist en lugar de acceder directamente a trackList
+                // CORRECCIÓN: Usar setPlaylist en lugar de acceder directamente a trackList
                 playerViewModel.setPlaylist(songs)
 
             } catch (e: Exception) {
@@ -99,7 +100,7 @@ fun SearchScreen(playerViewModel: PlayerViewModel) {
             .padding(16.dp)
             .background(Color(0xFF0B0B0B))
     ) {
-        // 🔍 Barra de búsqueda
+        //  Barra de búsqueda
         OutlinedTextField(
             value = query,
             onValueChange = {
@@ -146,7 +147,7 @@ fun SearchScreen(playerViewModel: PlayerViewModel) {
                         SongItem(song = song,
                             onAddToPlaylist = { selectedSong = song },
                             onPlayClick = {
-                                // 🔥 CORRECCIÓN: Usar playSongInPlaylist en lugar de playSong
+                                // CORRECCIÓN: Usar playSongInPlaylist en lugar de playSong
                                 playerViewModel.playSongInPlaylist(song, songs, context)
                                 Toast.makeText(context, "Reproduciendo: ${song.title}", Toast.LENGTH_SHORT).show()
                             } )

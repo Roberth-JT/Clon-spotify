@@ -21,7 +21,7 @@ fun CreatePlaylistDialog(
 ) {
     var playlistTitle by remember { mutableStateOf("") }
     var playlistDescription by remember { mutableStateOf("") }
-    var isPublic by remember { mutableStateOf(false) } // 🔹 Nueva variable
+    var isPublic by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(true) }
 
     val firestore = FirebaseFirestore.getInstance()
@@ -70,7 +70,7 @@ fun CreatePlaylistDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // 🔒 Selector de privacidad
+                    // Selector de privacidad
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -115,7 +115,7 @@ fun CreatePlaylistDialog(
                                 description = playlistDescription,
                                 imageUrl = "https://cdn-icons-png.flaticon.com/512/1384/1384060.png",
                                 songs = emptyList(),
-                                isPublic = isPublic // 🔹 Guardamos el valor
+                                isPublic = isPublic //  Guardamos el valor
                             )
 
                             firestore.collection("usuarios")
@@ -124,10 +124,10 @@ fun CreatePlaylistDialog(
                                 .document(playlistId)
                                 .set(newPlaylist)
                                 .addOnSuccessListener {
-                                    println("✅ Playlist guardada (${if (isPublic) "pública" else "privada"})")
+                                    println(" Playlist guardada (${if (isPublic) "pública" else "privada"})")
                                 }
                                 .addOnFailureListener {
-                                    println("❌ Error al guardar playlist: ${it.message}")
+                                    println(" Error al guardar playlist: ${it.message}")
                                 }
                         }
 

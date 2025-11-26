@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -24,7 +26,6 @@ fun LoginScreen(
     viewModel: AuthViewModel,
     navController: NavController,
     onLoginSuccess: () -> Unit = {
-        //  ruta
         navController.navigate("home_graph") {
             popUpTo("login") { inclusive = true }
         }
@@ -34,11 +35,12 @@ fun LoginScreen(
     }
 ) {
     var email by remember { mutableStateOf("") }
-    var showPasswordField by remember { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+
     var localErrorMessage by remember { mutableStateOf<String?>(null) }
 
-    val activity = LocalContext.current as Activity
+   // val activity = LocalContext.current as Activity
 
     Box(
         modifier = Modifier
@@ -55,132 +57,71 @@ fun LoginScreen(
 
             Image(
                 painter = painterResource(id = R.drawable.spotify_logo),
-                contentDescription = "Logo Spotify",
-                modifier = Modifier
-                    .size(80.dp)
-                    .padding(bottom = 16.dp)
+                contentDescription = "Logo",
+                modifier = Modifier.size(80.dp)
             )
 
             Text(
                 text = "Inicia sesión en Spotify",
                 color = Color.White,
                 fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
-                lineHeight = 28.sp
+                fontWeight = FontWeight.Bold
             )
 
-            // Botones sociales
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SocialLoginButton(
-                    iconRes = R.drawable.google_logo,
-                    text = "Continuar con Google",
-                    onClick = {
-                        viewModel.loginWithGoogle(activity) { success ->
-                            if (success) {
-                                onLoginSuccess()
-                            } else {
-                                localErrorMessage = viewModel.authMessage
-                            }
-                        }
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Email / password
+            // Email
             OutlinedTextField(
                 value = email,
-                onValueChange = {
-                    email = it
-                    showPasswordField = it.isNotBlank()
-                },
-                label = { Text("Ingresa tu correo o usuario") },
+                onValueChange = { email = it },
+                label = { Text("Correo electronico") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Black,
-                    unfocusedContainerColor = Color.Black,
-                    focusedIndicatorColor = Color.White,
-                    unfocusedIndicatorColor = Color.Gray,
-                    cursorColor = Color.White,
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.Gray,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
+                colors = textFieldColors()
             )
 
-            if (showPasswordField) {
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Contraseña") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Black,
-                        unfocusedContainerColor = Color.Black,
-                        focusedIndicatorColor = Color.White,
-                        unfocusedIndicatorColor = Color.Gray,
-                        cursorColor = Color.White,
-                        focusedLabelColor = Color.White,
-                        unfocusedLabelColor = Color.Gray,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    )
-                )
-            }
+            // Contraseña
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Contraseña") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    TextButton(onClick = { showPassword = !showPassword }) {
+                        Text(if (showPassword) "Ocultar" else "Ver", color = Color.Green)
+                    }
+                },
+                colors = textFieldColors()
+            )
 
-            if (showPasswordField && password.isNotBlank()) {
-                Button(
-                    onClick = {
-                        if (email.isNotEmpty() && password.isNotEmpty()) {
-                            viewModel.login(email, password) { success, error ->
-                                if (success) {
-                                    onLoginSuccess()
-                                } else {
-                                    localErrorMessage = error
-                                }
-                            }
-                        } else {
-                            localErrorMessage = "Completa todos los campos"
+            Button(
+                onClick = {
+                    if (email.isNotEmpty() && password.isNotEmpty()) {
+                        viewModel.login(email, password) { success, error ->
+                            if (success) onLoginSuccess()
+                            else localErrorMessage = error
                         }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(50)
-                ) {
-                    Text("Continuar", color = Color.Black, fontWeight = FontWeight.Bold)
-                }
-            }
-
-            // Mostrar carga si corresponde
-            if (viewModel.isLoading) {
-                Spacer(modifier = Modifier.height(16.dp))
-                CircularProgressIndicator(color = Color.White)
-            }
-
-            // Mostrar mensaje de error local
-            localErrorMessage?.let {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(it, color = Color.Red, fontSize = 14.sp)
-            }
-
-            // Texto inferior
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                    } else {
+                        localErrorMessage = "Completa todos los campos"
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Green),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(50)
             ) {
-                Text("¿No tienes cuenta?", color = Color.DarkGray, fontSize = 14.sp)
+                Text("Continuar", color = Color.Black)
+            }
+
+            localErrorMessage?.let {
+                Text(it, color = Color.Red)
+            }
+
+            Row {
+                Text("¿No tienes cuenta?", color = Color.Gray)
                 TextButton(onClick = onRegisterClick) {
-                    Text("Regístrate en Spotify", color = Color.White, fontSize = 14.sp)
+                    Text("Regístrate", color = Color.White)
                 }
             }
         }
     }
 }
-
-

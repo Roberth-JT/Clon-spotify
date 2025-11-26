@@ -6,7 +6,6 @@ import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.ui.screens.sampleMixes
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 
@@ -14,10 +13,10 @@ class HomeViewModel : ViewModel() {
     private val firestore = FirebaseFirestore.getInstance()
 
     private val _playlists = MutableStateFlow<List<PlaylistUi>>(emptyList())
-    val playlists: StateFlow<List<PlaylistUi>> = _playlists
+    //val playlists: StateFlow<List<PlaylistUi>> = _playlists
 
     private val _mixes = MutableStateFlow<List<PlaylistUi>>(emptyList())
-    val mixes: StateFlow<List<PlaylistUi>> = _mixes
+    //val mixes: StateFlow<List<PlaylistUi>> = _mixes
 
     init {
         ensureDatabaseInitialized()
@@ -27,7 +26,7 @@ class HomeViewModel : ViewModel() {
 
     private fun ensureDatabaseInitialized() {
         viewModelScope.launch {
-            val playlistsRef = firestore.collection("playlists")
+            //val playlistsRef = firestore.collection("playlists")
             val mixesRef = firestore.collection("mixes")
             mixesRef.get().addOnSuccessListener { snapshot ->
                 if (snapshot.isEmpty) {

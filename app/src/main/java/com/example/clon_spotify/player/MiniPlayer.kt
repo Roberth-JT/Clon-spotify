@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -50,6 +51,11 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
     val playbackPosition = remember { mutableStateOf(0L) }
     // Estado para el modo de repetición
     val repeatMode by playerViewModel.repeatMode.collectAsState()
+
+    val isMiniPlayerVisible by playerViewModel.isMiniPlayerVisible.collectAsState()
+
+// Si está oculto, no mostrar nada
+    if (!isMiniPlayerVisible) return
 
     // Actualizar posición cada segundo si hay canción
     LaunchedEffect(currentSong) {
@@ -102,6 +108,21 @@ fun MiniPlayer(playerViewModel: PlayerViewModel) {
                     ),
                     modifier = Modifier.height(24.dp)
                 )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(onClick = { playerViewModel.hideMiniPlayer() }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Cerrar mini reproductor",
+                            tint = Color.White
+                        )
+                    }
+                }
+
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),

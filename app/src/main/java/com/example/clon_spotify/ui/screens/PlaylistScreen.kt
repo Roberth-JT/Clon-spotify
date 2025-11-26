@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -139,7 +140,7 @@ fun PlaylistScreen(
         )
     }
 
-    // 🎧 Interfaz principal
+    // Interfaz principal
     Scaffold(
 //        topBar = {
 //            TopAppBar(
@@ -218,7 +219,7 @@ fun PlaylistScreen(
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }.addOnFailureListener {
-                                Toast.makeText(context, "Error al actualizar estado", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "No tienes permiso para cambiar el estado de esta playlist", Toast.LENGTH_SHORT).show()
                             }
                         },
                         colors = SwitchDefaults.colors(
@@ -299,6 +300,8 @@ fun SongOptionsBottomSheet(
     val context = LocalContext.current
     val firestore = FirebaseFirestore.getInstance()
     var isSaving by remember { mutableStateOf(false) }
+    var showAddToPlaylistDialog by remember { mutableStateOf(false) }
+
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -333,7 +336,7 @@ fun SongOptionsBottomSheet(
             Divider(color = Color.DarkGray, thickness = 0.7.dp)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ❤️ Agregar a me gusta
+            //  Agregar a me gusta
             OptionItem(
                 iconUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
                 label = if (isSaving) "Guardando..." else "Agregar a Tus me gusta",
@@ -364,11 +367,20 @@ fun SongOptionsBottomSheet(
                     }
                 }
             )
-
-            OptionItem("https://cdn-icons-png.flaticon.com/512/786/786205.png", "Compartir")
-            OptionItem("https://cdn-icons-png.flaticon.com/512/1828/1828817.png", "Agregar a otra playlist")
-
-            // ❌ Eliminar canción
+            OptionItem(
+                iconUrl = "https://cdn-icons-png.flaticon.com/512/1828/1828817.png",
+                label = "Agregar a otra playlist",
+                onClick = {
+                    showAddToPlaylistDialog = true
+                }
+            )
+            if (showAddToPlaylistDialog) {
+                AddToPlaylistDialog(
+                    song = song,
+                    onDismiss = { showAddToPlaylistDialog = false }
+                )
+            }
+            //  Eliminar canción
             OptionItem(
                 iconUrl = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png",
                 label = "Eliminar de esta playlist",
@@ -383,19 +395,15 @@ fun SongOptionsBottomSheet(
 
                     ref.update("songs", nuevaLista)
                         .addOnSuccessListener {
-                            Toast.makeText(context, "Canción eliminada ❌", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Canción eliminada ", Toast.LENGTH_SHORT).show()
                             onSongDeleted(song)
                             onDismiss()
                         }
                         .addOnFailureListener {
-                            Toast.makeText(context, "Error al eliminar", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "No tienes permiso para eliminar esta canción", Toast.LENGTH_SHORT).show()
                         }
                 }
             )
-
-            Divider(color = Color.DarkGray, thickness = 0.7.dp)
-            OptionItem("https://cdn-icons-png.flaticon.com/512/565/565547.png", "Ir al álbum")
-            OptionItem("https://cdn-icons-png.flaticon.com/512/747/747376.png", "Ir al artista")
         }
     }
 }

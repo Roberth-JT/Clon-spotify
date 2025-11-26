@@ -18,7 +18,15 @@ class AuthViewModel : ViewModel() {
 
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-
+    init {
+        // Cargar usuario en caso haya sesión persistida
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            userId = currentUser.uid
+            isValidAuth = true
+            loadUserData(currentUser.uid)
+        }
+    }
     fun register(
         email: String,
         password: String,
@@ -56,6 +64,26 @@ class AuthViewModel : ViewModel() {
                 onResult(false, authMessage)
             }
     }
+    fun loadUserData(uid: String) {
+        isLoading = true
+        firestore.collection("usuarios")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    val nombre = snapshot.getString("nombre") ?: ""
+                    val email = snapshot.getString("email") ?: ""
+
+                    // Aquí puedes guardar en variables de estado
+                    authMessage = null
+                }
+                isLoading = false
+            }
+            .addOnFailureListener { error ->
+                isLoading = false
+                authMessage = "Error cargando usuario: ${error.localizedMessage}"
+            }
+    }
 
     fun login(
         email: String,
@@ -79,23 +107,5 @@ class AuthViewModel : ViewModel() {
                 onResult(false, authMessage)
             }
     }
-    fun loginWithGoogle(
-        context: Context,
-        onResult: (Boolean) -> Unit
-    ) {
-        isLoading = true
-        authMessage = null
-        GoogleAuthHelper.signInWithGoogle(context) { success, uid, error ->
-            isLoading = false
-            if (success && uid != null) {
-                isValidAuth = true
-                userId = uid
-                onResult(true)
-            } else {
-                isValidAuth = false
-                authMessage = error
-                onResult(false)
-            }
-        }
-    }
+
 }

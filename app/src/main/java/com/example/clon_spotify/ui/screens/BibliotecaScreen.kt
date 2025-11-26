@@ -70,26 +70,26 @@ fun BibliotecaScreen(
 
         val userDoc = firestore.collection("usuarios").document(userId)
 
-        // 🔹 Escuchar playlists del usuario
+        // Escuchar playlists del usuario
         userDoc.collection("playlists").addSnapshotListener { snapshot, e ->
             if (snapshot != null) {
                 playlists = snapshot.toObjects(PlaylistUi::class.java)
             }
         }
 
-        // 🔹 Escuchar canciones "Me gusta" del usuario
+        // Escuchar canciones "Me gusta" del usuario
         userDoc.collection("me_gusta").addSnapshotListener { snapshot, error ->
             if (error != null) return@addSnapshotListener
             if (snapshot != null) likedSongs = snapshot.toObjects(SongUi::class.java)
         }
 
-        // 🔹 Escuchar álbumes del usuario
+        // Escuchar álbumes del usuario
         userDoc.collection("albumes").addSnapshotListener { snapshot, error ->
             if (error != null) return@addSnapshotListener
             if (snapshot != null) albumes = snapshot.toObjects(PlaylistUi::class.java)
         }
 
-        // 🔹 Generar lista única de artistas en base a las playlists existentes
+        //Generar lista única de artistas en base a las playlists existentes
         val allSongs = playlists.flatMap { it.songs } +
                 albumes.flatMap { it.songs } +
                 likedSongs
@@ -130,7 +130,7 @@ fun BibliotecaScreen(
             )
 
             IconButton(
-                onClick = { /* Navegar a búsqueda en biblioteca */ }
+                onClick = { homeNavController.navigate("search")}
             ) {
                 Icon(
                     imageVector = Icons.Default.Search,

@@ -166,7 +166,7 @@ fun PublicPlaylistScreen(
             Text("Canciones", color = Color.White, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 🔹 Lista de canciones
+            //  Lista de canciones
             LazyColumn {
                 items(playlist!!.songs.size) { idx ->
                     val song = playlist!!.songs[idx]

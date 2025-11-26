@@ -85,7 +85,7 @@ fun MessagesScreen(
             // Botón Nuevo mensaje - ACTUALIZADO
             Button(
                 onClick = {
-                    // ✅ Navega a la pantalla de selección de amigos
+                    // Navega a la pantalla de selección de amigos
                     navController.navigate("select_friends")
                 },
                 modifier = Modifier
