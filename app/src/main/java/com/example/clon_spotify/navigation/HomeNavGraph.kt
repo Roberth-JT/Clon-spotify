@@ -24,10 +24,12 @@ import androidx.navigation.navArgument
 import com.example.clon_spotify.player.MiniPlayer
 import com.example.clon_spotify.player.PlayerViewModel
 import com.example.clon_spotify.ui.components.HomeBottomBar
+import com.example.clon_spotify.ui.screens.ArtistSongsScreen
 import com.example.clon_spotify.ui.screens.BibliotecaScreen
 import com.example.clon_spotify.ui.screens.CreatePlaylistDialog
 import com.example.clon_spotify.ui.screens.HomeDrawerScreen
 import com.example.clon_spotify.ui.screens.MessagesScreen
+import com.example.clon_spotify.ui.screens.MusicScreen
 import com.example.clon_spotify.ui.screens.PerfilUsuarioScreen
 import com.example.clon_spotify.ui.screens.PlaylistScreen
 import com.example.clon_spotify.ui.screens.PublicPlaylistScreen
@@ -91,6 +93,15 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
                 PlaylistScreen(playlistId = playlistId, playerViewModel = playerViewModel)
             }
 
+            composable("music_screen") {
+                MusicScreen(
+                    navController = homeNavController,
+                    playerViewModel = playerViewModel,
+                    onOpenPlaylist = { playlistId ->
+                        homeNavController.navigate("playlist/$playlistId")
+                    }
+                )
+            }
             composable("create_playlist") {
                 CreatePlaylistDialog(navController = homeNavController)
             }
@@ -138,13 +149,25 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
                     playerViewModel = playerViewModel
                 )
             }
+            composable(
+                route = "artist_songs/{artistName}",
+                arguments = listOf(navArgument("artistName") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val artistName = backStackEntry.arguments?.getString("artistName") ?: ""
+                ArtistSongsScreen(
+                    artistName = artistName,
+                    navController = homeNavController,
+                    playerViewModel = playerViewModel
+                )
+            }
+
         }
 
-        // Mostrar diálogo de creación si se activa
+
+        // Mostrar diálogo de creación si se activa (FUERA del NavHost)
         if (showCreateDialog) {
             showCreateDialog = false
             homeNavController.navigate("create_playlist")
-
         }
     }
 }

@@ -4,13 +4,32 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,10 +52,9 @@ fun HomeContent(
     modifier: Modifier = Modifier,
     navController: NavController,
     playerViewModel: PlayerViewModel,
-    onOpenPlaylist: (String) -> Unit // este callback lo llamas para navegar a la pantalla de la playlist
+    onOpenPlaylist: (String) -> Unit
 ) {
     val context = LocalContext.current
-    //val firestore = FirebaseFirestore.getInstance()
     var playlists by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var mixes by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var recomendados by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
@@ -44,6 +62,8 @@ fun HomeContent(
     var likedSongs by remember { mutableStateOf<List<SongUi>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
+    // Estado para controlar qué vista mostrar (Todas o Música)
+    var selectedView by remember { mutableStateOf("Todas") }
 
     LaunchedEffect(Unit) {
         val firestore = FirebaseFirestore.getInstance()
@@ -124,13 +144,15 @@ fun HomeContent(
     ) {
         item {
             val chips = listOf("Todas", "Música")
-            var selectedChip by remember { mutableStateOf("Todas") }
 
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(chips) { chip ->
-                    val isSelected = chip == selectedChip
+                    val isSelected = chip == selectedView
                     Button(
-                        onClick = { selectedChip = chip },
+                        onClick = {
+                            // Cambiar la vista seleccionada
+                            selectedView = chip
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isSelected) Color(0xFF1DB954) else Color(0xFF2A2A2A)
                         ),
@@ -143,56 +165,166 @@ fun HomeContent(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            if (playlists.isNotEmpty()) {
-                GridPlaylists(playlists, onOpenPlaylist, playerViewModel, context)
+            // Mostrar contenido según la vista seleccionada
+            when (selectedView) {
+                "Todas" -> {
+                    // VISTA ORIGINAL DEL HOME
+                    if (playlists.isNotEmpty()) {
+                        GridPlaylists(playlists, onOpenPlaylist, playerViewModel, context)
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text("Tus me gusta", color = Color.White, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val tusMeGusta = PlaylistUi(
+                        id = "tus_me_gusta",
+                        title = "Tus me gusta",
+                        description = if (likedSongs.isEmpty()) "Canciones que marcarás con ❤️"
+                        else "${likedSongs.size} canciones guardadas",
+                        imageUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
+                        songs = likedSongs
+                    )
+
+                    // Mostrar mini lista de me gusta
+                    WidePlaylistCard(
+                        playlist = tusMeGusta,
+                        onClick = { onOpenPlaylist(tusMeGusta.id) },
+                        playerViewModel = playerViewModel,
+                        context = context,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+                "Música" -> {
+                    // VISTA DE MÚSICA (organizada)
+                    MusicContentView(
+                        playlists = playlists,
+                        mixes = mixes,
+                        albumes = albumes,
+                        likedSongs = likedSongs,
+                        onOpenPlaylist = onOpenPlaylist,
+                        playerViewModel = playerViewModel,
+                        context = context
+                    )
+                }
+            }
+        }
+
+        // Solo mostrar estas secciones si estamos en la vista "Todas"
+        if (selectedView == "Todas") {
+            if (recomendados.isNotEmpty()) {
+                item {
+                    SectionCarousel("Recomendados", recomendados, onOpenPlaylist, playerViewModel, context)
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            if (mixes.isNotEmpty()) {
+                item {
+                    SectionCarousel("Tus mixes más escuchados", mixes, onOpenPlaylist, playerViewModel, context)
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            }
 
-            Text("Tus me gusta", color = Color.White, fontWeight = FontWeight.Bold)
+            if (albumes.isNotEmpty()) {
+                item {
+                    SectionCarousel("Álbumes con canciones que te gustan", albumes, onOpenPlaylist, playerViewModel, context)
+                    Spacer(modifier = Modifier.height(100.dp))
+                }
+            }
+        }
+    }
+}
+
+// NUEVO COMPONENTE: Vista de música organizada
+@Composable
+fun MusicContentView(
+    playlists: List<PlaylistUi>,
+    mixes: List<PlaylistUi>,
+    albumes: List<PlaylistUi>,
+    likedSongs: List<SongUi>,
+    onOpenPlaylist: (String) -> Unit,
+    playerViewModel: PlayerViewModel,
+    context: Context
+) {
+    Column {
+        // Tus me gusta
+        Text("Tus me gusta", color = Color.White, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        val tusMeGusta = PlaylistUi(
+            id = "tus_me_gusta",
+            title = "Tus me gusta",
+            description = if (likedSongs.isEmpty()) "Canciones que marcarás con ❤️"
+            else "${likedSongs.size} canciones guardadas",
+            imageUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
+            songs = likedSongs
+        )
+
+        WidePlaylistCard(
+            playlist = tusMeGusta,
+            onClick = { onOpenPlaylist(tusMeGusta.id) },
+            playerViewModel = playerViewModel,
+            context = context,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Tus playlists
+        if (playlists.isNotEmpty()) {
+            Text("Tus playlists", color = Color.White, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-
-            val tusMeGusta = PlaylistUi(
-                id = "tus_me_gusta",
-                title = "Tus me gusta",
-                description = if (likedSongs.isEmpty()) "Canciones que marcarás con ❤️"
-                else "${likedSongs.size} canciones guardadas",
-                imageUrl = "https://misc.scdn.co/liked-songs/liked-songs-640.png",
-                songs = likedSongs
-            )
-
-            // Mostrar mini lista de me gusta
-            WidePlaylistCard(
-                playlist = tusMeGusta,
-                onClick = { onOpenPlaylist(tusMeGusta.id) },
-                playerViewModel = playerViewModel,
-                context = context,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
-        if (recomendados.isNotEmpty()) {
-            item {
-                SectionCarousel("Recomendados", recomendados, onOpenPlaylist, playerViewModel, context)
-                Spacer(modifier = Modifier.height(24.dp))
+            playlists.forEach { playlist ->
+                WidePlaylistCard(
+                    playlist = playlist,
+                    onClick = { onOpenPlaylist(playlist.id) },
+                    playerViewModel = playerViewModel,
+                    context = context,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
-        if (mixes.isNotEmpty()) {
-            item {
-                SectionCarousel("Tus mixes más escuchados", mixes, onOpenPlaylist, playerViewModel, context)
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-        }
-
+        // Álbumes
         if (albumes.isNotEmpty()) {
-            item {
-                SectionCarousel("Álbumes con canciones que te gustan", albumes, onOpenPlaylist, playerViewModel, context)
-                Spacer(modifier = Modifier.height(100.dp))
+            Text("Álbumes", color = Color.White, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            albumes.forEach { album ->
+                WidePlaylistCard(
+                    playlist = album,
+                    onClick = { onOpenPlaylist(album.id) },
+                    playerViewModel = playerViewModel,
+                    context = context,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // Mixes
+        if (mixes.isNotEmpty()) {
+            Text("Tus mixes", color = Color.White, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            mixes.forEach { mix ->
+                WidePlaylistCard(
+                    playlist = mix,
+                    onClick = { onOpenPlaylist(mix.id) },
+                    playerViewModel = playerViewModel,
+                    context = context,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
+
+        Spacer(modifier = Modifier.height(100.dp))
     }
 }
 
@@ -303,6 +435,7 @@ fun SectionCarousel(
         }
     }
 }
+
 // RECOMENDADOS
 fun sampleRecomendados(): List<PlaylistUi> {
     val adeleSongs = listOf(
@@ -375,6 +508,5 @@ fun sampleAlbumes(): List<PlaylistUi> {
         PlaylistUi("a2", "Jesse & Joy", "Amor y armonía", "https://i.scdn.co/image/ab67616d0000b2731f6379010c486d0658e644f5", jjAlbum),
         PlaylistUi("a3", "Miley Cyrus", "Fuerza y libertad", "https://www.hollywoodreporter.com/wp-content/uploads/2025/10/GettyImages-1472464614-e1759444822734.jpg?w=2000&h=1126&crop=1&resize=1440%2C810", mileyAlbum) ,
         PlaylistUi("a4", "Luis Miguel", "Ritmo, Romantica", "https://i.ytimg.com/vi/wOjzo02Tmck/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCjimJjGE7FfMmJDqlZzf7Sk6P0Rg", luisAlbum),
-
     )
 }

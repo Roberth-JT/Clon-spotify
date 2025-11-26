@@ -1,4 +1,3 @@
-// BibliotecaScreen.kt
 package com.example.clon_spotify.ui.screens
 
 import androidx.compose.foundation.background
@@ -42,6 +41,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.clon_spotify.models.PlaylistUi
 import com.example.clon_spotify.models.SongUi
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
@@ -53,15 +53,44 @@ fun BibliotecaScreen(
     var playlists by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var likedSongs by remember { mutableStateOf<List<SongUi>>(emptyList()) }
     var albumes by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
+    var mixes by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
+    var recomendados by remember { mutableStateOf<List<PlaylistUi>>(emptyList()) }
     var artistas by remember { mutableStateOf<List<Artista>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     // Estado para el filtro seleccionado
     var selectedFilter by remember { mutableStateOf("Playlists") }
 
-    // Obtener datos en tiempo real
+    // Obtener datos en tiempo real y extraer artistas
+    LaunchedEffect(playlists, likedSongs, albumes, mixes, recomendados) {
+        // Combinar todas las canciones de todas las fuentes
+        val todasLasCanciones = playlists.flatMap { it.songs } +
+                albumes.flatMap { it.songs } +
+                mixes.flatMap { it.songs } +
+                recomendados.flatMap { it.songs } +
+                likedSongs
+
+        // Extraer artistas únicos de todas las canciones
+        artistas = todasLasCanciones
+            .groupBy { it.artist } // Agrupar por nombre de artista
+            .map { (nombreArtista, canciones) ->
+                Artista(
+                    id = nombreArtista, // Usar el nombre como ID
+                    name = nombreArtista,
+                    imageUrl = canciones.firstOrNull()?.imageUrl ?: "", // Usar imagen de la primera canción
+                    followers = canciones.size, // Usar cantidad de canciones como "seguidores"
+                    genres = emptyList(),
+                    totalSongs = canciones.size // Número total de canciones de este artista
+                )
+            }
+            .sortedBy { it.name } // Ordenar alfabéticamente
+
+        isLoading = false
+    }
+
+    // Obtener datos iniciales
     LaunchedEffect(Unit) {
-        val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
 
         if (userId == null) {
             isLoading = false
@@ -89,25 +118,18 @@ fun BibliotecaScreen(
             if (snapshot != null) albumes = snapshot.toObjects(PlaylistUi::class.java)
         }
 
-        //Generar lista única de artistas en base a las playlists existentes
-        val allSongs = playlists.flatMap { it.songs } +
-                albumes.flatMap { it.songs } +
-                likedSongs
+        // Escuchar mixes del usuario
+        userDoc.collection("mixes").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            if (snapshot != null) mixes = snapshot.toObjects(PlaylistUi::class.java)
+        }
 
-        artistas = allSongs
-            .map { song -> Artista(
-                id = song.artist,
-                name = song.artist,
-                imageUrl = song.imageUrl, // puedes cambiar por imagen distinta si lo prefieres
-                followers = 0,
-                genres = emptyList()
-            )}
-            .distinctBy { it.name }
-
-
-        isLoading = false
+        // Escuchar recomendados del usuario
+        userDoc.collection("recomendados").addSnapshotListener { snapshot, error ->
+            if (error != null) return@addSnapshotListener
+            if (snapshot != null) recomendados = snapshot.toObjects(PlaylistUi::class.java)
+        }
     }
-
 
     Column(
         modifier = Modifier
@@ -175,9 +197,9 @@ fun BibliotecaScreen(
             )
             "Artistas" -> LibraryArtistsList(
                 artistas = artistas,
-                onArtistClick = { artistaId ->
-                    // Navegar a pantalla del artista
-                    homeNavController.navigate("artist/$artistaId")
+                onArtistClick = { artistName ->
+                    // Navegar a la pantalla del artista con sus canciones
+                    homeNavController.navigate("artist_songs/$artistName")
                 }
             )
             "Álbumes" -> LibraryAlbumsList(
@@ -190,7 +212,93 @@ fun BibliotecaScreen(
     }
 }
 
-// Componente para lista de Playlists (ya lo tenías)
+// Componente para lista de Artistas - CON CLICK
+@Composable
+fun LibraryArtistsList(
+    artistas: List<Artista>,
+    onArtistClick: (String) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (artistas.isEmpty()) {
+            item {
+                EmptyState(message = "No se encontraron artistas en tu música")
+            }
+        } else {
+            items(artistas) { artista ->
+                LibraryArtistItem(
+                    artista = artista,
+                    onArtistClick = { onArtistClick(artista.name) }
+                )
+            }
+        }
+    }
+}
+
+// Item para Artista - CON CLICK
+@Composable
+fun LibraryArtistItem(artista: Artista, onArtistClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
+        onClick = onArtistClick // HACER CLICKEABLE
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Imagen circular del artista
+            AsyncImage(
+                model = artista.imageUrl,
+                contentDescription = artista.name,
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(25.dp))
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = artista.name,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1
+                )
+
+                Text(
+                    text = "Artista • ${artista.totalSongs} ${if (artista.totalSongs == 1) "canción" else "canciones"}",
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+// Modelo Artista
+data class Artista(
+    val id: String = "",
+    val name: String = "",
+    val imageUrl: String = "",
+    val followers: Int = 0,
+    val genres: List<String> = emptyList(),
+    val totalSongs: Int = 0
+)
+
+// Los demás componentes se mantienen igual...
 @Composable
 fun LibraryPlaylistsList(
     playlists: List<PlaylistUi>,
@@ -236,34 +344,6 @@ fun LibraryPlaylistsList(
     }
 }
 
-// Componente para lista de Artistas
-@Composable
-fun LibraryArtistsList(
-    artistas: List<Artista>,
-    onArtistClick: (String) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        if (artistas.isEmpty()) {
-            item {
-                EmptyState(message = "No tienes artistas seguidos")
-            }
-        } else {
-            items(artistas) { artista ->
-                LibraryArtistItem(
-                    artista = artista,
-                    onArtistClick = { onArtistClick(artista.id) }
-                )
-            }
-        }
-    }
-}
-
-// Componente para lista de Álbumes
 @Composable
 fun LibraryAlbumsList(
     albumes: List<PlaylistUi>,
@@ -290,104 +370,6 @@ fun LibraryAlbumsList(
     }
 }
 
-// Item para Artista
-@Composable
-fun LibraryArtistItem(artista: Artista, onArtistClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(70.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
-        onClick = onArtistClick
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Imagen circular del artista
-            AsyncImage(
-                model = artista.imageUrl,
-                contentDescription = artista.name,
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(25.dp)) // Circular
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = artista.name,
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1
-                )
-
-                Text(
-                    text = "Artista",
-                    color = Color.Gray,
-                    fontSize = 12.sp,
-                    maxLines = 1
-                )
-            }
-        }
-    }
-}
-
-// Item para Álbum
-@Composable
-fun LibraryAlbumItem(album: PlaylistUi, onAlbumClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(70.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
-        onClick = onAlbumClick
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncImage(
-                model = album.imageUrl,
-                contentDescription = album.title,
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(6.dp))
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = album.title,
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1
-                )
-
-                Text(
-                    text = "Álbum • ${album.description ?: ""}",
-                    color = Color.Gray,
-                    fontSize = 12.sp,
-                    maxLines = 1
-                )
-            }
-        }
-    }
-}
-
-// Item para Playlist (ya lo tenías)
 @Composable
 fun LibraryPlaylistItem(playlist: PlaylistUi, onPlaylistClick: () -> Unit) {
     Card(
@@ -439,7 +421,53 @@ fun LibraryPlaylistItem(playlist: PlaylistUi, onPlaylistClick: () -> Unit) {
     }
 }
 
-// Estado vacío
+@Composable
+fun LibraryAlbumItem(album: PlaylistUi, onAlbumClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
+        onClick = onAlbumClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = album.imageUrl,
+                contentDescription = album.title,
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(6.dp))
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = album.title,
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1
+                )
+
+                Text(
+                    text = "Álbum • ${album.description ?: ""}",
+                    color = Color.Gray,
+                    fontSize = 12.sp,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun EmptyState(message: String) {
     Box(
@@ -473,12 +501,3 @@ fun FilterChip(
         )
     )
 }
-
-// Modelo de Artista (necesitas crear este data class)
-data class Artista(
-    val id: String = "",
-    val name: String = "",
-    val imageUrl: String = "",
-    val followers: Int = 0,
-    val genres: List<String> = emptyList()
-)
