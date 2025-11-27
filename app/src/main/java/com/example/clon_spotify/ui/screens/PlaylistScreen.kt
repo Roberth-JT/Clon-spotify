@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -30,8 +29,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -103,7 +100,7 @@ fun PlaylistScreen(
 
                 if (doc.exists()) {
                     val loaded = doc.toObject(PlaylistUi::class.java)
-                    // Aseguramos usar solo el campo correcto (isPublic)
+                    // Aseguramos usar solo el campo correcto
                     playlist = loaded?.copy(
                         isPublic = loaded.isPublic || doc.getBoolean("public") == true
                     )
@@ -380,12 +377,33 @@ fun SongOptionsBottomSheet(
                     onDismiss = { showAddToPlaylistDialog = false }
                 )
             }
+
             //  Eliminar canción
             OptionItem(
                 iconUrl = "https://cdn-icons-png.flaticon.com/512/1828/1828843.png",
                 label = "Eliminar de esta playlist",
                 onClick = {
                     val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@OptionItem
+
+                    if (playlist.id == "tus_me_gusta") {
+                        // 🔥 Eliminar desde me_gusta
+                        firestore.collection("usuarios")
+                            .document(userId)
+                            .collection("me_gusta")
+                            .document(song.id)
+                            .delete()
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Quitado de Tus me gusta 💜", Toast.LENGTH_SHORT).show()
+                                onSongDeleted(song)
+                                onDismiss()
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Error al eliminar 😢", Toast.LENGTH_SHORT).show()
+                            }
+                        return@OptionItem
+                    }
+
+                    // 🔥 Eliminar desde playlist normal
                     val ref = firestore.collection("usuarios")
                         .document(userId)
                         .collection("playlists")
@@ -395,12 +413,12 @@ fun SongOptionsBottomSheet(
 
                     ref.update("songs", nuevaLista)
                         .addOnSuccessListener {
-                            Toast.makeText(context, "Canción eliminada ", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Canción eliminada", Toast.LENGTH_SHORT).show()
                             onSongDeleted(song)
                             onDismiss()
                         }
                         .addOnFailureListener {
-                            Toast.makeText(context, "No tienes permiso para eliminar esta canción", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "No tienes permiso para eliminar", Toast.LENGTH_SHORT).show()
                         }
                 }
             )

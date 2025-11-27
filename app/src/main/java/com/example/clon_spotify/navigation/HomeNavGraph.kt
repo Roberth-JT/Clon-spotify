@@ -29,7 +29,6 @@ import com.example.clon_spotify.ui.screens.BibliotecaScreen
 import com.example.clon_spotify.ui.screens.CreatePlaylistDialog
 import com.example.clon_spotify.ui.screens.HomeDrawerScreen
 import com.example.clon_spotify.ui.screens.MessagesScreen
-import com.example.clon_spotify.ui.screens.MusicScreen
 import com.example.clon_spotify.ui.screens.PerfilUsuarioScreen
 import com.example.clon_spotify.ui.screens.PlaylistScreen
 import com.example.clon_spotify.ui.screens.PublicPlaylistScreen
@@ -39,13 +38,13 @@ import com.example.clon_spotify.ui.screens.SelectFriendsScreen
 @Composable
 fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavController) {
     val homeNavController = rememberNavController()
-    var showCreateDialog by remember { mutableStateOf(false) }//creacion de dialogo de playlist
+    var showCreateDialog by remember { mutableStateOf(false) } //creacion de dialogo de playlist
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             Column {
-                // MiniPlayer global (siempre visible)
+                // MiniPlayer global
                 Surface(
                     tonalElevation = 8.dp,
                     shadowElevation = 12.dp,
@@ -93,15 +92,19 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
                 PlaylistScreen(playlistId = playlistId, playerViewModel = playerViewModel)
             }
 
-            composable("music_screen") {
-                MusicScreen(
+            // RUTA PARA CANCIONES DEL ARTISTA
+            composable(
+                route = "artist_songs/{artistName}",
+                arguments = listOf(navArgument("artistName") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val artistName = backStackEntry.arguments?.getString("artistName") ?: ""
+                ArtistSongsScreen(
+                    artistName = artistName,
                     navController = homeNavController,
-                    playerViewModel = playerViewModel,
-                    onOpenPlaylist = { playlistId ->
-                        homeNavController.navigate("playlist/$playlistId")
-                    }
+                    playerViewModel = playerViewModel
                 )
             }
+
             composable("create_playlist") {
                 CreatePlaylistDialog(navController = homeNavController)
             }
@@ -120,7 +123,7 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
                 )
             }
 
-            //  RUTA PERFIL DE USUARIO (dentro del NavHost)
+            // RUTA PERFIL DE USUARIO
             composable(
                 route = "perfil/{userId}",
                 arguments = listOf(navArgument("userId") { type = NavType.StringType })
@@ -149,22 +152,9 @@ fun HomeNavGraph(playerViewModel: PlayerViewModel, mainNavController: NavControl
                     playerViewModel = playerViewModel
                 )
             }
-            composable(
-                route = "artist_songs/{artistName}",
-                arguments = listOf(navArgument("artistName") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val artistName = backStackEntry.arguments?.getString("artistName") ?: ""
-                ArtistSongsScreen(
-                    artistName = artistName,
-                    navController = homeNavController,
-                    playerViewModel = playerViewModel
-                )
-            }
-
         }
 
-
-        // Mostrar diálogo de creación si se activa (FUERA del NavHost)
+        // Mostrar diálogo de creación si se activa
         if (showCreateDialog) {
             showCreateDialog = false
             homeNavController.navigate("create_playlist")
